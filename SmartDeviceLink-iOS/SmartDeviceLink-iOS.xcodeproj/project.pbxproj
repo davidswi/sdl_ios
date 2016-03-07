@@ -3999,7 +3999,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
 				MTL_ENABLE_DEBUG_INFO = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -4034,6 +4034,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -4092,6 +4093,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
 				);
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smartdevicelink.smartdevicelink;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
@@ -4125,6 +4127,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
 				);
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smartdevicelink.smartdevicelink;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
