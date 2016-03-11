@@ -1661,8 +1661,6 @@
 		5DEE55C41B864AB3004F0D0F /* OHHTTPStubs.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = OHHTTPStubs.framework.dSYM; path = Carthage/Build/iOS/OHHTTPStubs.framework.dSYM; sourceTree = "<group>"; };
 		5DF2BB9C1B94E38A00CE5994 /* SDLURLSessionSpec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SDLURLSessionSpec.m; path = "UtilitiesSpecs/HTTP Connection/SDLURLSessionSpec.m"; sourceTree = "<group>"; };
 		667EA3F21C909CBF00C1C988 /* libSmartDeviceLinkLibrary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libSmartDeviceLinkLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		667EA3F41C909CBF00C1C988 /* SmartDeviceLinkLibrary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmartDeviceLinkLibrary.h; sourceTree = "<group>"; };
-		667EA3F61C909CBF00C1C988 /* SmartDeviceLinkLibrary.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SmartDeviceLinkLibrary.m; sourceTree = "<group>"; };
 		667EA6231C921C4D00C1C988 /* test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = test.h; sourceTree = "<group>"; };
 		667EA6251C921C4D00C1C988 /* test.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = test.m; sourceTree = "<group>"; };
 		E9C32B841AB20B4300F283AF /* NSThread+ThreadIndex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSThread+ThreadIndex.h"; sourceTree = "<group>"; };
@@ -2099,7 +2097,6 @@
 				5D4019B11A76EC350006B0C2 /* Example */,
 				5D61FA1D1A84237100846EE7 /* SmartDeviceLink */,
 				5D61FA2C1A84237100846EE7 /* SmartDeviceLinkTests */,
-				667EA3F31C909CBF00C1C988 /* SmartDeviceLinkLibrary */,
 				667EA6221C921C4D00C1C988 /* test */,
 				5D4019B01A76EC350006B0C2 /* Products */,
 			);
@@ -2964,15 +2961,6 @@
 				5DF2BB9C1B94E38A00CE5994 /* SDLURLSessionSpec.m */,
 			);
 			name = "HTTP Connection";
-			sourceTree = "<group>";
-		};
-		667EA3F31C909CBF00C1C988 /* SmartDeviceLinkLibrary */ = {
-			isa = PBXGroup;
-			children = (
-				667EA3F41C909CBF00C1C988 /* SmartDeviceLinkLibrary.h */,
-				667EA3F61C909CBF00C1C988 /* SmartDeviceLinkLibrary.m */,
-			);
-			path = SmartDeviceLinkLibrary;
 			sourceTree = "<group>";
 		};
 		667EA6221C921C4D00C1C988 /* test */ = {
