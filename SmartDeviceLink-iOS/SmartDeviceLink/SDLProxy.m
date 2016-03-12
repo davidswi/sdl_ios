@@ -523,7 +523,9 @@ const int POLICIES_CORRELATION_ID = 65535;
     NSURL *url = [NSURL URLWithString:urlString];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     [request setValue:@"application/json" forHTTPHeaderField:@"content-type"];
-    request.HTTPMethod = @"POST";
+    request.HTTPMethod = @"PUT";
+    
+    NSLog(@"Request Body  === %@",[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] );
     
     // Logging
     NSString *logMessage = [NSString stringWithFormat:@"OnSystemRequest (HTTP Request) to URL %@", urlString];
