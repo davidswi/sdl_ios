@@ -1,9 +1,57 @@
+# 4.1.3 Release Notes
+### Enhancements
+* Fix unit tests attempting to be built against Xcode 7.1 instead of Xcode 7.3. (#413)
+* Auto-upload Carthage archives on tag Travis builds. (#413)
+* Move codecov.io settings to the repository in codecov.yml (#415)
+* Add a Jazzy documentation generation script, add theme, and generate documentation for the SDL Developer Portal. (#417)
+
+### Bugfixes
+* Improve video streaming by altering video encoding settings. (#410)
+
+### Other
+* Shift project and code files into the root directory, removing the SmartDeviceLink-iOS directory. (#404)
+
+# 4.1.2 Release Notes
+### Bugfixes
+* Enable additional static analyzer rules for Xcode 7.3, fix an associated nullability issue.
+
+### Other
+* New .gitignore rule to help carthage submodule users.
+
+# 4.1.1 Release Notes
+### Bug Fixes
+* Fixed passing in wrong type, causing SDL Protocol v1 to fail.
+* Fix `SDLRPCStruct` subclasses generating an incorrect description when logged.
+
+### Other
+* Some repository files are now linked into the Xcode project.
+* Updated testing dependencies for Xcode 7.3 compatibility.
+
+# 4.1.0 Release Notes
+### Enhancements
+* The `LAUNCH_APP` system request was implemented.
+* The proxy now tracks application state and relays that information to the Head Unit on v4 and above.
+
+### Bug Fixes
+* `[SDLProxyListener onProxyOpened]` will only be called when the RPC service starts, instead of any service.
+* Sending heartbeat has been deprecated. The iOS proxy will now only respond to heartbeats.
+* `SYSTEM_REQUEST` RPC now properly uploads and returns data.
+* `SDLStreamingMediaManager`'s version check now correctly compares versions
+
+### Other
+* Updates to the README with "Getting Started" code, and updated information on testing.
+* License copyright updated to 2016.
+* All testing frameworks are removed from the repository and must be bootstrapped when wanted.
+
+### Deprecations
+* Methods relating to sending heartbeat have been deprecated. This should not affect your app in any way. These lower-level classes will be removed in future versions.
+
 # 4.0.3 Release Notes
 
 ### Enhancements
 * Implement HTTP System Requests for policy updates
 
-### Bug Fix
+### Bug Fixes
 * Revert the reachability code in TCP. If you were having trouble with connecting to SDL Core, this should fix that particular bug.
 
 ### Other
