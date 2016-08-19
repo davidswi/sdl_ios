@@ -16,6 +16,7 @@
 
 QuickSpecBegin(SDLProtocolReceivedMessageRouterSpec)
 
+// TODO: This should be rewritten using an actual mock (i.e. SDLProtocolListenerDelegateMock class to avoid OCMock)
 describe(@"HandleReceivedMessage Tests", ^ {
     context(@"When handling control message", ^ {
         it(@"Should route message correctly", ^ {
@@ -33,28 +34,11 @@ describe(@"HandleReceivedMessage Tests", ^ {
             testMessage.header = testHeader;
             testMessage.payload = [NSData data];
             
-            __block BOOL verified = NO;
-            [[[[delegateMock stub] andDo: ^(NSInvocation* invocation) {
-                verified = YES;
-                Byte serviceType;
-                Byte sessionID;
-                Byte version;
-                
-                [invocation getArgument:&serviceType atIndex:2];
-                [invocation getArgument:&sessionID atIndex:3];
-                [invocation getArgument:&version atIndex:4];
-                
-                expect(@(serviceType)).to(equal(@(SDLServiceType_RPC)));
-                expect(@(sessionID)).to(equal(@0x93));
-                expect(@(version)).to(equal(@0x02));
-            }] ignoringNonObjectArgs] handleProtocolStartSessionACK:0 sessionID:0 version:0];
-            
             SDLProtocolReceivedMessageRouter* router = [[SDLProtocolReceivedMessageRouter alloc] init];
             router.delegate = delegateMock;
-            
             [router handleReceivedMessage:testMessage];
             
-            expect(@(verified)).to(beTruthy());
+            OCMExpect([delegateMock handleProtocolStartSessionACK:testMessage.header]);
         });
     });
     

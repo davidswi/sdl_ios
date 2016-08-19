@@ -11,6 +11,8 @@
 #import "SDLAlert.h"
 #import "SDLAlertManeuver.h"
 #import "SDLAppHMIType.h"
+#import "SDLAppInfo.h"
+#import "SDLAppInfo.h"
 #import "SDLChangeRegistration.h"
 #import "SDLCreateInteractionChoiceSet.h"
 #import "SDLDebugTool.h"
@@ -56,6 +58,7 @@
 #import "SDLUnsubscribeVehicleData.h"
 #import "SDLUpdateTurnList.h"
 
+static NSString *const SDLBundleShortVersionStringKey = @"CFBundleShortVersionString";
 
 @implementation SDLRPCRequestFactory
 
@@ -376,7 +379,9 @@
     msg.appID = appID;
     msg.deviceInfo = [self sdl_buildDeviceInfo];
     msg.correlationID = [NSNumber numberWithInt:1];
-
+    SDLAppInfo *appInfo = [self sdl_buildAppInfo];
+    appInfo.appDisplayName = appName;
+    msg.appInfo = appInfo;
     return msg;
 }
 
@@ -391,6 +396,15 @@
     deviceInfo.carrier = carrierName;
 
     return deviceInfo;
+}
+
++ (SDLAppInfo *)sdl_buildAppInfo {
+    SDLAppInfo *appInfo = [[SDLAppInfo alloc] init];
+    NSBundle *mainBundle = [NSBundle mainBundle];
+    NSDictionary *bundleDictionary = mainBundle.infoDictionary;
+    appInfo.appVersion = bundleDictionary[SDLBundleShortVersionStringKey];
+    appInfo.appBundleID = mainBundle.bundleIdentifier;
+    return appInfo;
 }
 
 + (SDLRegisterAppInterface *)buildRegisterAppInterfaceWithAppName:(NSString *)appName isMediaApp:(NSNumber *)isMediaApp languageDesired:(SDLLanguage *)languageDesired appID:(NSString *)appID {

@@ -1,3 +1,44 @@
+# 4.2.2 Release Notes
+### Bug Fixes
+* Fixed HTTP URL schemes not being properly altered to HTTPS to account for App Transport Security (#432, #436).
+
+# 4.2.1 Release Notes
+### Bug Fixes
+* Fixed SDLStreamingMediaManager encryption status not being set properly (#433, #434).
+
+# 4.2.0 Release Notes (since Beta 1)
+### Enhancements
+* The Streaming Media Manager will now provide a CVPixelBufferPool with default settings so that you don't have to create one yourself.
+* Modified Streaming Media Manager `videoSessionAuthenticated` to be `videoSessionEncrypted` and modify the value based on the Start Session ACK encryption flag.
+
+### Bug Fixes
+* Make sure to release some C objects in Streaming Media Manager
+
+### Other
+* Documentation updates.
+
+# 4.2.0 Beta 1 Release Notes
+### Enhancements
+* Add an AppInfo struct to RegisterAppInterface automatically with some application details, so that the head unit may automatically launch some apps via IAP if supported (#398, #431).
+* Add a touch manager to the streaming media manager. The touch manager will watch for touch events and generate gesture recognizer-like callbacks (#402, #423).
+* The streaming media manager now supports custom encoder settings and better default settings, as well as automatically creates a video based on the display capabilites sent by the head unit in register app interface response (#400, #406).
+* Add support for linking an external encryption library to the SDL iOS library so that SDL data on the transport may be TLS encrypted (#348).
+
+### Bug Fixes
+* Store sessionIds and service metadata together in the protocol code (#350).
+* Fixed a streaming media manager enum casing issue by deprecating the incorrect cased enum and adding a correctly cased one (#383, #411).
+
+# 4.1.5 Release Notes
+### Bug Fixes
+* Since Apple is disallowing virtually all HTTP requests in Jan. 2017, SDLURLSession will now take all HTTP requests and attempt them over HTTPS. Some cars off the line still have HTTP URLs hardcoded into them, therefore this is a necessary precaution.
+
+# 4.1.4 Release Notes
+### Bug Fixes
+* Fixed exception causing app to crash when SDL Core disconnects in TCP debug mode. Warning: The app may enter an undefined connection state as there is currently no retry strategy in TCP debug mode.
+
+### Other
+* Update test frameworks
+
 # 4.1.3 Release Notes
 ### Enhancements
 * Fix unit tests attempting to be built against Xcode 7.1 instead of Xcode 7.3. (#413)
