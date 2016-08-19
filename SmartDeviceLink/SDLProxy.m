@@ -20,19 +20,24 @@
 #import "SDLLayoutMode.h"
 #import "SDLLockScreenManager.h"
 #import "SDLLockScreenManager.h"
+#import "SDLLockScreenManager.h"
 #import "SDLNames.h"
 #import "SDLOnHMIStatus.h"
 #import "SDLOnSystemRequest.h"
 #import "SDLPolicyDataParser.h"
 #import "SDLPolicyDataParser.h"
+#import "SDLPolicyDataParser.h"
 #import "SDLProtocol.h"
+#import "SDLProtocolMessage.h"
 #import "SDLProtocolMessage.h"
 #import "SDLProtocolMessage.h"
 #import "SDLPutFile.h"
 #import "SDLRPCPayload.h"
 #import "SDLRPCPayload.h"
+#import "SDLRPCPayload.h"
 #import "SDLRPCRequestFactory.h"
 #import "SDLRPCResponse.h"
+#import "SDLRegisterAppInterfaceResponse.h"
 #import "SDLRequestType.h"
 #import "SDLSiphonServer.h"
 #import "SDLStreamingMediaManager.h"
@@ -40,12 +45,14 @@
 #import "SDLSystemRequest.h"
 #import "SDLTimer.h"
 #import "SDLURLSession.h"
+#import "SDLVehicleType.h"
 
+typedef NSString SDLVehicleMake;
 
 typedef void (^URLSessionTaskCompletionHandler)(NSData *data, NSURLResponse *response, NSError *error);
 typedef void (^URLSessionDownloadTaskCompletionHandler)(NSURL *location, NSURLResponse *response, NSError *error);
 
-NSString *const SDLProxyVersion = @"4.1.3";
+NSString *const SDLProxyVersion = @"4.2.1";
 const float startSessionTime = 10.0;
 const float notifyProxyClosedDelay = 0.1;
 const int POLICIES_CORRELATION_ID = 65535;
@@ -55,8 +62,11 @@ const int POLICIES_CORRELATION_ID = 65535;
     SDLLockScreenManager *_lsm;
 }
 
+@property (copy, nonatomic) NSString *appId;
 @property (strong, nonatomic) NSMutableSet *mutableProxyListeners;
-@property (nonatomic, strong, readwrite) SDLStreamingMediaManager *streamingMediaManager;
+@property (nonatomic, strong, readwrite, nullable) SDLStreamingMediaManager *streamingMediaManager;
+@property (nonatomic, strong, nullable) SDLDisplayCapabilities *displayCapabilities;
+@property (nonatomic, strong) NSMutableDictionary<SDLVehicleMake *, Class> *securityManagers;
 
 @end
 
@@ -71,6 +81,7 @@ const int POLICIES_CORRELATION_ID = 65535;
         _alreadyDestructed = NO;
 
         _mutableProxyListeners = [NSMutableSet setWithObject:theDelegate];
+        _securityManagers = [NSMutableDictionary dictionary];
         _protocol = protocol;
         _transport = transport;
         _transport.delegate = protocol;
@@ -101,12 +112,18 @@ const int POLICIES_CORRELATION_ID = 65535;
         _transport = nil;
         _protocol = nil;
         _mutableProxyListeners = nil;
+        _streamingMediaManager = nil;
+        _displayCapabilities = nil;
     }
 }
 
 - (void)dispose {
     if (self.transport != nil) {
         [self.transport disconnect];
+    }
+
+    if (self.protocol.securityManager != nil) {
+        [self.protocol.securityManager stop];
     }
 
     [self destructObjects];
@@ -124,13 +141,8 @@ const int POLICIES_CORRELATION_ID = 65535;
     }
 }
 
-#pragma mark - Accessors
 
-- (NSSet *)proxyListeners {
-    return [self.mutableProxyListeners copy];
-}
-
-#pragma mark - Methods
+#pragma mark - Application Lifecycle
 
 - (void)sendMobileHMIState {
     UIApplicationState appState = [UIApplication sharedApplication].applicationState;
@@ -157,6 +169,12 @@ const int POLICIES_CORRELATION_ID = 65535;
     [self sendRPC:HMIStatusRPC];
 }
 
+#pragma mark - Accessors
+
+- (NSSet *)proxyListeners {
+    return [self.mutableProxyListeners copy];
+}
+
 
 #pragma mark - Setters / Getters
 
@@ -166,20 +184,59 @@ const int POLICIES_CORRELATION_ID = 65535;
 
 - (SDLStreamingMediaManager *)streamingMediaManager {
     if (_streamingMediaManager == nil) {
-        _streamingMediaManager = [[SDLStreamingMediaManager alloc] initWithProtocol:self.protocol];
+        _streamingMediaManager = [[SDLStreamingMediaManager alloc] initWithProtocol:self.protocol displayCapabilities:self.displayCapabilities];
         [self.protocol.protocolDelegateTable addObject:_streamingMediaManager];
+        [self.mutableProxyListeners addObject:_streamingMediaManager.touchManager];
     }
 
     return _streamingMediaManager;
 }
 
 
+#pragma mark - SecurityManager
+
+- (void)addSecurityManagers:(NSArray<Class> *)securityManagerClasses forAppId:(NSString *)appId {
+    NSParameterAssert(securityManagerClasses != nil);
+    NSParameterAssert(appId != nil);
+    self.appId = appId;
+
+    for (Class securityManagerClass in securityManagerClasses) {
+        if (![securityManagerClass conformsToProtocol:@protocol(SDLSecurityType)]) {
+            NSString *reason = [NSString stringWithFormat:@"Invalid security manager: Class %@ does not conform to SDLSecurityType protocol", NSStringFromClass(securityManagerClass)];
+            @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:nil];
+        }
+
+        NSSet<NSString *> *vehicleMakes = [securityManagerClass availableMakes];
+
+        if (vehicleMakes == nil || vehicleMakes.count == 0) {
+            NSString *reason = [NSString stringWithFormat:@"Invalid security manager: Failed to retrieve makes for class %@", NSStringFromClass(securityManagerClass)];
+            @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:nil];
+        }
+
+        for (NSString *vehicleMake in vehicleMakes) {
+            self.securityManagers[vehicleMake] = securityManagerClass;
+        }
+    }
+}
+
+- (id<SDLSecurityType>)securityManagerForMake:(NSString *)make {
+    if ((make != nil) && (self.securityManagers[make] != nil)) {
+        Class securityManagerClass = self.securityManagers[make];
+        self.protocol.appId = self.appId;
+        return [[securityManagerClass alloc] init];
+    }
+
+    return nil;
+}
+
+
 #pragma mark - SDLProtocolListener Implementation
+
 - (void)onProtocolOpened {
     _isConnected = YES;
     [SDLDebugTool logInfo:@"StartSession (request)" withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
 
-    [self.protocol sendStartSessionWithType:SDLServiceType_RPC];
+    [self.protocol startServiceWithType:SDLServiceType_RPC];
 
     if (self.startSessionTimer == nil) {
         self.startSessionTimer = [[SDLTimer alloc] initWithDuration:startSessionTime repeat:NO];
@@ -200,14 +257,14 @@ const int POLICIES_CORRELATION_ID = 65535;
     [self invokeMethodOnDelegates:@selector(onError:) withObject:e];
 }
 
-- (void)handleProtocolStartSessionACK:(SDLServiceType)serviceType sessionID:(Byte)sessionID version:(Byte)version {
+- (void)handleProtocolStartSessionACK:(SDLProtocolHeader *)header {
     // Turn off the timer, the start session response came back
     [self.startSessionTimer cancel];
 
-    NSString *logMessage = [NSString stringWithFormat:@"StartSession (response)\nSessionId: %d for serviceType %d", sessionID, serviceType];
+    NSString *logMessage = [NSString stringWithFormat:@"StartSession (response)\nSessionId: %d for serviceType %d", header.sessionID, header.serviceType];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
 
-    if (serviceType == SDLServiceType_RPC) {
+    if (header.serviceType == SDLServiceType_RPC) {
         [self invokeMethodOnDelegates:@selector(onProxyOpened) withObject:nil];
     }
 }
@@ -312,6 +369,7 @@ const int POLICIES_CORRELATION_ID = 65535;
 
 
 #pragma mark - RPC Handlers
+
 - (void)handleRPCUnregistered:(NSDictionary *)messageDictionary {
     NSString *logMessage = [NSString stringWithFormat:@"Unregistration forced by module. %@", messageDictionary];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
@@ -322,6 +380,13 @@ const int POLICIES_CORRELATION_ID = 65535;
     //Print Proxy Version To Console
     NSString *logMessage = [NSString stringWithFormat:@"Framework Version: %@", self.proxyVersion];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    SDLRegisterAppInterfaceResponse *registerResponse = (SDLRegisterAppInterfaceResponse *)response;
+    self.displayCapabilities = registerResponse.displayCapabilities;
+    if (_streamingMediaManager) {
+        _streamingMediaManager.displayCapabilties = registerResponse.displayCapabilities;
+    }
+    self.protocol.securityManager = [self securityManagerForMake:registerResponse.vehicleType.make];
+
     if ([SDLGlobals globals].protocolVersion >= 4) {
         [self sendMobileHMIState];
         // Send SDL updates to application state
