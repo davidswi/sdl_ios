@@ -21,7 +21,7 @@ NSString *const legacyProtocolString = @"com.ford.sync.prot0";
 NSString *const controlProtocolString = @"com.smartdevicelink.prot0";
 NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 
-int const createSessionRetries = 5;
+int const createSessionRetries = 1;
 int const protocolIndexTimeoutSeconds = 20;
 int const streamOpenTimeoutSeconds = 2;
 
@@ -234,8 +234,6 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_retryEstablishSession {
     // Current strategy disallows automatic retries.
     self.sessionSetupInProgress = NO;
-    //[self disconnect];
-    [self connect];
 }
 
 // This gets called after both I/O streams of the session have opened.
