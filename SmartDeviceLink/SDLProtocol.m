@@ -271,8 +271,10 @@ typedef NSNumber SDLServiceTypeBox;
 }
 
 - (void)sdl_logRPCSend:(SDLProtocolMessage *)message {
+#ifdef DEBUG
     NSString *logMessage = [NSString stringWithFormat:@"Sending : %@", message];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Protocol toOutput:SDLDebugOutput_File | SDLDebugOutput_DeviceConsole toGroup:self.debugConsoleGroupName];
+#endif
 }
 
 // Use for normal messages
