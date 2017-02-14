@@ -195,7 +195,7 @@ int const streamOpenTimeoutSeconds = 2;
         controlStreamDelegate.streamEndHandler = [self sdl_controlStreamEndedHandler];
         controlStreamDelegate.streamErrorHandler = [self sdl_controlStreamErroredHandler];
 
-        if (![self.controlSession start]) {
+        if (![self.controlSession start:nil]) {
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
@@ -219,7 +219,7 @@ int const streamOpenTimeoutSeconds = 2;
         ioStreamDelegate.streamEndHandler = [self sdl_dataStreamEndedHandler];
         ioStreamDelegate.streamErrorHandler = [self sdl_dataStreamErroredHandler];
 
-        if (![self.session start]) {
+        if (![self.session start:_transmit_queue]) {
             [SDLDebugTool logInfo:@"Data Session Failed"];
             self.session.streamDelegate = nil;
             self.session = nil;
@@ -268,6 +268,7 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Data Transmission
 
 - (void)sendData:(NSData *)data {
+#ifdef POLLED_SEND
     dispatch_async(_transmit_queue, ^{
         NSOutputStream *ostream = self.session.easession.outputStream;
         NSMutableData *remainder = data.mutableCopy;
@@ -285,6 +286,28 @@ int const streamOpenTimeoutSeconds = 2;
             }
         }
     });
+#else
+    NSOutputStream *ostream = self.session.easession.outputStream;
+    NSMutableData *remainder = data.mutableCopy;
+    
+    dispatch_async(_transmit_queue, ^{
+        [self.session sendData:^BOOL(NSError *__autoreleasing *error) {
+            BOOL completed = NO;
+            
+            NSInteger bytesRemaining = remainder.length;
+            NSInteger bytesWritten = [ostream write:remainder.bytes maxLength:remainder.length];
+            if (bytesWritten < 0){
+                *error = ostream.streamError;
+            }
+            else{
+                [remainder replaceBytesInRange:NSMakeRange(0, bytesWritten) withBytes:NULL length:0];
+                completed = (bytesRemaining == bytesWritten);
+            }
+            
+            return completed;
+        }];
+    });
+#endif // POLLED_SEND
 }
 
 

@@ -9,6 +9,7 @@
 @class SDLStreamDelegate;
 
 typedef void (^SessionCompletionHandler)(BOOL success);
+typedef BOOL (^SessionSendHandler)(NSError **error);
 
 @interface SDLIAPSession : NSObject
 
@@ -21,7 +22,9 @@ typedef void (^SessionCompletionHandler)(BOOL success);
 - (instancetype)initWithAccessory:(EAAccessory *)accessory
                       forProtocol:(NSString *)protocol;
 
-- (BOOL)start;
+- (BOOL)start:(dispatch_queue_t)sendQ;
 - (void)stop;
+
+- (void)sendData:(SessionSendHandler)handler;
 
 @end

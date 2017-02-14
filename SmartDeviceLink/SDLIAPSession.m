@@ -12,6 +12,11 @@
 
 @property (assign) BOOL isInputStreamOpen;
 @property (assign) BOOL isOutputStreamOpen;
+@property (nonatomic, assign) BOOL dataSession;
+@property (nonatomic, strong) dispatch_queue_t ostreamQ;
+@property (nonatomic, copy) SessionSendHandler sendHandler;
+@property (nonatomic, strong) NSError *error;
+@property (nonatomic, assign) BOOL sendComplete;
 
 @end
 
@@ -23,6 +28,13 @@
 - (instancetype)initWithAccessory:(EAAccessory *)accessory forProtocol:(NSString *)protocol {
     NSString *logMessage = [NSString stringWithFormat:@"SDLIAPSession initWithAccessory:%@ forProtocol:%@", accessory, protocol];
     [SDLDebugTool logInfo:logMessage];
+    
+    if ([protocol isEqualToString:@"com.smartdevicelink.prot0"]){
+        _dataSession = NO;
+    }
+    else{
+        _dataSession = YES;
+    }
 
     self = [super init];
     if (self) {
@@ -40,8 +52,11 @@
 
 #pragma mark - Public Stream Lifecycle
 
-- (BOOL)start {
+- (BOOL)start:(dispatch_queue_t)sendQ {
     __weak typeof(self) weakSelf = self;
+    if (self.dataSession){
+        self.ostreamQ = sendQ;
+    }
 
     NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", _accessory.name, _protocol];
     [SDLDebugTool logInfo:logMessage];
@@ -53,6 +68,7 @@
 
         strongSelf.streamDelegate.streamErrorHandler = [self streamErroredHandler];
         strongSelf.streamDelegate.streamOpenHandler = [self streamOpenedHandler];
+        strongSelf.streamDelegate.streamHasSpaceHandler = [self streamHasSpaceHandler];
 
         [strongSelf startStream:weakSelf.easession.outputStream];
         [strongSelf startStream:weakSelf.easession.inputStream];
@@ -71,10 +87,45 @@
     self.easession = nil;
 }
 
+- (void)sendData:(SessionSendHandler)handler{
+    NSOutputStream *ostream = self.easession.outputStream;
+    
+    if (ostream.hasSpaceAvailable){
+        NSError *err;
+        BOOL sendComplete = handler(&err);
+        if (sendComplete || err != nil){
+            // Either all bytes sent or an error occurred, but this operation is complete
+            self.error = err;
+            return;
+        }
+    }
+    self.sendHandler = handler;
+    self.sendComplete = NO;
+    
+    NSDate *timeoutDate = [NSDate dateWithTimeIntervalSinceNow:10.0];
+    do{
+        @autoreleasepool{
+            [[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode
+                                     beforeDate: timeoutDate];
+        }
+        
+        // Each call to the runMode method will perform one iteration through the runloop
+        // Check if the current date and time is past the timeout date
+        if ([timeoutDate earlierDate:[NSDate date]] == timeoutDate){
+            self.error = [NSError errorWithDomain: NSURLErrorDomain
+                                             code: NSURLErrorTimedOut
+                                         userInfo: nil];
+        }
+        
+    } while (!self.sendComplete && self.error == nil);
+    
+    self.sendHandler = nil;
+}
+
 
 #pragma mark - Private Stream Lifecycle Helpers
 
-- (void)startStream:(NSStream *)stream {
+- (void)startStream:(NSStream *)stream{
     stream.delegate = self.streamDelegate;
     [stream scheduleInRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
     [stream open];
@@ -92,9 +143,18 @@
         status1 != NSStreamStatusClosed) {
         [stream close];
     }
-
-    [stream removeFromRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
-    [stream setDelegate:nil];
+    
+    if (self.dataSession && self.ostreamQ != nil && stream == self.easession.outputStream){
+        dispatch_sync(self.ostreamQ, ^{
+            self.sendComplete = YES;
+            [stream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+            [stream setDelegate:nil];
+        });
+    }
+    else{
+        [stream removeFromRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+        [stream setDelegate:nil];
+    }
 
     NSUInteger status2 = stream.streamStatus;
     if (status2 == NSStreamStatusClosed) {
@@ -118,6 +178,13 @@
         if (stream == [strongSelf.easession outputStream]) {
             [SDLDebugTool logInfo:@"Output Stream Opened"];
             strongSelf.isOutputStreamOpen = YES;
+            if (strongSelf.dataSession && strongSelf.ostreamQ != nil){
+                [stream removeFromRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+                dispatch_sync(strongSelf.ostreamQ, ^{
+                    [stream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+                });
+            }
+            
         } else if (stream == [strongSelf.easession inputStream]) {
             [SDLDebugTool logInfo:@"Input Stream Opened"];
             strongSelf.isInputStreamOpen = YES;
@@ -141,6 +208,21 @@
     };
 }
 
+- (SDLStreamHasSpaceHandler)streamHasSpaceHandler {
+    __weak typeof(self) weakSelf = self;
+    
+    return ^(NSStream *stream) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        
+        if (self.dataSession){
+            NSError *err;
+            if (!strongSelf.sendComplete && strongSelf.sendHandler != nil){
+                strongSelf.sendComplete = strongSelf.sendHandler(&err);
+            }
+            strongSelf.error = err;
+        }
+    };
+}
 
 #pragma mark - Lifecycle Destruction
 
@@ -148,6 +230,8 @@
     self.delegate = nil;
     self.accessory = nil;
     self.protocol = nil;
+    self.sendHandler = nil;
+    self.ostreamQ = nil;
     self.streamDelegate = nil;
     self.easession = nil;
     [SDLDebugTool logInfo:@"SDLIAPSession Dealloc"];
