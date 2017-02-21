@@ -18,13 +18,13 @@ typedef BOOL (^SessionSendHandler)(NSError **error);
 @property (strong, atomic) EASession *easession;
 @property (weak) id<SDLIAPSessionDelegate> delegate;
 @property (strong, atomic) SDLStreamDelegate *streamDelegate;
+@property (nonatomic) NSThread *ioStreamThread;
 
 - (instancetype)initWithAccessory:(EAAccessory *)accessory
                       forProtocol:(NSString *)protocol;
 
-- (BOOL)start:(dispatch_queue_t)sendQ;
+- (BOOL)start;
 - (void)stop;
-
-- (void)sendData:(SessionSendHandler)handler;
+- (void)sendData:(NSData *)data;
 
 @end

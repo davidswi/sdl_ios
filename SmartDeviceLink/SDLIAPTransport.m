@@ -90,7 +90,6 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_accessoryConnected:(NSNotification *)notification {
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-
     self.retryCounter = 0;
     [self performSelector:@selector(connect) withObject:nil afterDelay:self.retryDelay];
 }
@@ -117,14 +116,22 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Stream Lifecycle
 
 - (void)connect {
-    if (!self.session && !self.sessionSetupInProgress) {
+  if(self.session) {
+    [self.session stop];
+    self.session = nil;
+    self.sessionSetupInProgress = NO;
+  }
+  
+  self.sessionSetupInProgress = YES;
+  [self sdl_establishSession];
+    /*if (!self.session && !self.sessionSetupInProgress) {
         self.sessionSetupInProgress = YES;
         [self sdl_establishSession];
     } else if (self.session) {
         [SDLDebugTool logInfo:@"Session already established."];
     } else {
         [SDLDebugTool logInfo:@"Session setup already in progress."];
-    }
+    }*/
 }
 
 - (void)disconnect {
@@ -195,7 +202,7 @@ int const streamOpenTimeoutSeconds = 2;
         controlStreamDelegate.streamEndHandler = [self sdl_controlStreamEndedHandler];
         controlStreamDelegate.streamErrorHandler = [self sdl_controlStreamErroredHandler];
 
-        if (![self.controlSession start:nil]) {
+        if (![self.controlSession start]) {
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
@@ -219,7 +226,7 @@ int const streamOpenTimeoutSeconds = 2;
         ioStreamDelegate.streamEndHandler = [self sdl_dataStreamEndedHandler];
         ioStreamDelegate.streamErrorHandler = [self sdl_dataStreamErroredHandler];
 
-        if (![self.session start:_transmit_queue]) {
+        if (![self.session start]) {
             [SDLDebugTool logInfo:@"Data Session Failed"];
             self.session.streamDelegate = nil;
             self.session = nil;
@@ -268,7 +275,7 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Data Transmission
 
 - (void)sendData:(NSData *)data {
-#ifdef POLLED_SEND
+#if USE_MAIN_THREAD
     dispatch_async(_transmit_queue, ^{
         NSOutputStream *ostream = self.session.easession.outputStream;
         NSMutableData *remainder = data.mutableCopy;
@@ -287,27 +294,13 @@ int const streamOpenTimeoutSeconds = 2;
         }
     });
 #else
-    NSOutputStream *ostream = self.session.easession.outputStream;
-    NSMutableData *remainder = data.mutableCopy;
-    
-    dispatch_async(_transmit_queue, ^{
-        [self.session sendData:^BOOL(NSError *__autoreleasing *error) {
-            BOOL completed = NO;
-            
-            NSInteger bytesRemaining = remainder.length;
-            NSInteger bytesWritten = [ostream write:remainder.bytes maxLength:remainder.length];
-            if (bytesWritten < 0){
-                *error = ostream.streamError;
-            }
-            else{
-                [remainder replaceBytesInRange:NSMakeRange(0, bytesWritten) withBytes:NULL length:0];
-                completed = (bytesRemaining == bytesWritten);
-            }
-            
-            return completed;
-        }];
-    });
-#endif // POLLED_SEND
+    SDLIAPSession *session = self.session;
+    if (session != nil){
+        dispatch_async(_transmit_queue, ^{
+            [session sendData:data];
+        });
+    }
+#endif // USE_MAIN_THREAD
 }
 
 
@@ -356,9 +349,9 @@ int const streamOpenTimeoutSeconds = 2;
 
             // Determine protocol string of the data session, then create that data session
             NSString *indexedProtocolString = [NSString stringWithFormat:@"%@%@", indexedProtocolStringPrefix, @(buf[0])];
-            dispatch_sync(dispatch_get_main_queue(), ^{
+          // dispatch_async(dispatch_get_main_queue() ^{
                 [strongSelf sdl_createIAPDataSessionWithAccessory:accessory forProtocol:indexedProtocolString];
-            });
+          // });
         }
     };
 }
