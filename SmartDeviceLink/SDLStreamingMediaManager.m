@@ -233,7 +233,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setVideoEncoderSettings:(NSDictionary *_Nullable)videoEncoderSettings {
     if (self.videoSessionConnected) {
+        /*
         @throw [NSException exceptionWithName:SDLErrorDomainStreamingMediaVideo reason:@"Cannot update video encoder settings while video session is connected." userInfo:nil];
+        */
         return;
     }
 
@@ -246,7 +248,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setDisplayCapabilties:(SDLDisplayCapabilities *_Nullable)displayCapabilties {
     if (self.videoSessionConnected) {
+        /*
         @throw [NSException exceptionWithName:SDLErrorDomainStreamingMediaVideo reason:@"Cannot update video encoder settings while video session is connected." userInfo:nil];
+        */
         return;
     }
 

@@ -9,7 +9,7 @@
 
 #define IO_STREAMTHREAD_NAME         @ "com.smartdevicelink.iostream"
 
-#define STREAM_THREAD_WAIT_SECS 10
+#define STREAM_THREAD_WAIT_SECS 1.0
 
 @interface SDLIAPSession ()
 
@@ -145,7 +145,9 @@
         [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode
                                  beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25f]];
       }
-    } while (![[NSThread currentThread] isCancelled]);
+    } while (![[NSThread currentThread] isCancelled] &&
+             outStream != nil &&
+             outStream.streamStatus != NSStreamStatusClosed);
     
     NSLog(@"closing accessory session");
     
@@ -254,7 +256,8 @@
     self.protocol = nil;
     self.streamDelegate = nil;
     self.easession = nil;
-  self.ioStreamThread =  nil;
+    self.ioStreamThread =  nil;
+    self.canceledSema = nil;
     [SDLDebugTool logInfo:@"SDLIAPSession Dealloc"];
 }
 

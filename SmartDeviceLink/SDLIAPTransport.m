@@ -430,7 +430,7 @@ int const streamOpenTimeoutSeconds = 2;
         __strong typeof(weakSelf) strongSelf = weakSelf;
 
         uint8_t buf[[SDLGlobals globals].maxMTUSize];
-        while ([istream hasBytesAvailable]) {
+        while (istream.streamStatus == NSStreamStatusOpen && istream.hasBytesAvailable) {
             NSInteger bytesRead = [istream read:buf maxLength:[SDLGlobals globals].maxMTUSize];
             NSData *dataIn = [NSData dataWithBytes:buf length:bytesRead];
 
