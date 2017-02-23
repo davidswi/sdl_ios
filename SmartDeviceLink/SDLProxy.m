@@ -202,15 +202,19 @@ const int POLICIES_CORRELATION_ID = 65535;
 
     for (Class securityManagerClass in securityManagerClasses) {
         if (![securityManagerClass conformsToProtocol:@protocol(SDLSecurityType)]) {
+            /*
             NSString *reason = [NSString stringWithFormat:@"Invalid security manager: Class %@ does not conform to SDLSecurityType protocol", NSStringFromClass(securityManagerClass)];
             @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:nil];
+            */
         }
 
         NSSet<NSString *> *vehicleMakes = [securityManagerClass availableMakes];
 
         if (vehicleMakes == nil || vehicleMakes.count == 0) {
+            /*
             NSString *reason = [NSString stringWithFormat:@"Invalid security manager: Failed to retrieve makes for class %@", NSStringFromClass(securityManagerClass)];
             @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:nil];
+            */
         }
 
         for (NSString *vehicleMake in vehicleMakes) {

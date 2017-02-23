@@ -21,7 +21,7 @@ NSString *const legacyProtocolString = @"com.ford.sync.prot0";
 NSString *const controlProtocolString = @"com.smartdevicelink.prot0";
 NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 
-int const createSessionRetries = 1;
+int const createSessionRetries = 5;
 int const protocolIndexTimeoutSeconds = 20;
 int const streamOpenTimeoutSeconds = 2;
 
@@ -34,6 +34,7 @@ int const streamOpenTimeoutSeconds = 2;
 @property (assign) int retryCounter;
 @property (assign) BOOL sessionSetupInProgress;
 @property (strong) SDLTimer *protocolIndexTimer;
+@property (nonatomic, assign) UIBackgroundTaskIdentifier bgStreamTaskId;
 
 @end
 
@@ -73,7 +74,9 @@ int const streamOpenTimeoutSeconds = 2;
                                              selector:@selector(sdl_accessoryDisconnected:)
                                                  name:EAAccessoryDidDisconnectNotification
                                                object:nil];
-
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sdl_applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(sdl_applicationWillEnterForeground:)
                                                  name:UIApplicationWillEnterForegroundNotification
@@ -90,8 +93,12 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_accessoryConnected:(NSNotification *)notification {
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-
     self.retryCounter = 0;
+    if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground){
+        self.bgStreamTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"IAPConnectLoop" expirationHandler:^{
+            self.bgStreamTaskId = UIBackgroundTaskInvalid;
+        }];
+    }
     [self performSelector:@selector(connect) withObject:nil afterDelay:self.retryDelay];
 }
 
@@ -113,18 +120,39 @@ int const streamOpenTimeoutSeconds = 2;
     [self connect];
 }
 
+- (void)sdl_applicationDidEnterBackground:(NSNotification *)notification {
+    if (self.sessionSetupInProgress){
+        [SDLDebugTool logInfo:@"App Backgrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+        self.bgStreamTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"IAPConnectLoop" expirationHandler:^{
+            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
+            self.bgStreamTaskId = UIBackgroundTaskInvalid;
+        }];
+        
+        self.retryCounter = 0;
+        [self sdl_retryEstablishSession];
+    }
+}
+
 
 #pragma mark - Stream Lifecycle
 
 - (void)connect {
-    if (!self.session && !self.sessionSetupInProgress) {
+  if(self.session) {
+    [self.session stop];
+    self.session = nil;
+    self.sessionSetupInProgress = NO;
+  }
+  
+  self.sessionSetupInProgress = YES;
+  [self sdl_establishSession];
+    /*if (!self.session && !self.sessionSetupInProgress) {
         self.sessionSetupInProgress = YES;
         [self sdl_establishSession];
     } else if (self.session) {
         [SDLDebugTool logInfo:@"Session already established."];
     } else {
         [SDLDebugTool logInfo:@"Session setup already in progress."];
-    }
+    }*/
 }
 
 - (void)disconnect {
@@ -234,6 +262,12 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_retryEstablishSession {
     // Current strategy disallows automatic retries.
     self.sessionSetupInProgress = NO;
+    if (self.session != nil){
+        [self.session stop];
+        self.session.delegate = nil;
+        self.session = nil;
+    }
+    [self connect];
 }
 
 // This gets called after both I/O streams of the session have opened.
@@ -247,6 +281,10 @@ int const streamOpenTimeoutSeconds = 2;
     // Data Session Opened
     if (![controlProtocolString isEqualToString:session.protocol]) {
         self.sessionSetupInProgress = NO;
+        if (self.bgStreamTaskId != UIBackgroundTaskInvalid){
+            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
+            self.bgStreamTaskId = UIBackgroundTaskInvalid;
+        }
         [SDLDebugTool logInfo:@"Data Session Established"];
         [self.delegate onTransportConnected];
     }
@@ -268,6 +306,7 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Data Transmission
 
 - (void)sendData:(NSData *)data {
+#if USE_MAIN_THREAD
     dispatch_async(_transmit_queue, ^{
         NSOutputStream *ostream = self.session.easession.outputStream;
         NSMutableData *remainder = data.mutableCopy;
@@ -285,6 +324,14 @@ int const streamOpenTimeoutSeconds = 2;
             }
         }
     });
+#else
+    SDLIAPSession *session = self.session;
+    if (session != nil){
+        dispatch_async(_transmit_queue, ^{
+            [session sendData:data];
+        });
+    }
+#endif // USE_MAIN_THREAD
 }
 
 
@@ -333,9 +380,9 @@ int const streamOpenTimeoutSeconds = 2;
 
             // Determine protocol string of the data session, then create that data session
             NSString *indexedProtocolString = [NSString stringWithFormat:@"%@%@", indexedProtocolStringPrefix, @(buf[0])];
-            dispatch_sync(dispatch_get_main_queue(), ^{
+          // dispatch_async(dispatch_get_main_queue() ^{
                 [strongSelf sdl_createIAPDataSessionWithAccessory:accessory forProtocol:indexedProtocolString];
-            });
+          // });
         }
     };
 }
@@ -383,7 +430,7 @@ int const streamOpenTimeoutSeconds = 2;
         __strong typeof(weakSelf) strongSelf = weakSelf;
 
         uint8_t buf[[SDLGlobals globals].maxMTUSize];
-        while ([istream hasBytesAvailable]) {
+        while (istream.streamStatus == NSStreamStatusOpen && istream.hasBytesAvailable) {
             NSInteger bytesRead = [istream read:buf maxLength:[SDLGlobals globals].maxMTUSize];
             NSData *dataIn = [NSData dataWithBytes:buf length:bytesRead];
 
