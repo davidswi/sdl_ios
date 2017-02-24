@@ -105,18 +105,18 @@
     NSOutputStream *ostream = self.easession.outputStream;
     NSMutableData *remainder = data.mutableCopy;
     
-    while (remainder.length != 0) {
-        if (ostream.streamStatus == NSStreamStatusOpen && ostream.hasSpaceAvailable) {
-            [self performSelector:@selector(writeToOutputStream:) onThread:self.ioStreamThread withObject:remainder waitUntilDone:YES];
-            
-            if (self.bytesWritten == -1) {
-                [SDLDebugTool logInfo:[NSString stringWithFormat:@"Error: %@", [ostream streamError]] withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All];
-                break;
-            }
-            
-            [remainder replaceBytesInRange:NSMakeRange(0, self.bytesWritten) withBytes:NULL length:0];
-            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+    while (remainder.length != 0 &&
+           ostream != nil &&
+           ostream.streamStatus == NSStreamStatusOpen &&
+           ostream.hasSpaceAvailable) {
+        [self performSelector:@selector(writeToOutputStream:) onThread:self.ioStreamThread withObject:remainder waitUntilDone:YES];
+        
+        if (self.bytesWritten == -1) {
+            [SDLDebugTool logInfo:[NSString stringWithFormat:@"Error: %@", [ostream streamError]] withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All];
+            break;
         }
+        
+        [remainder replaceBytesInRange:NSMakeRange(0, self.bytesWritten) withBytes:NULL length:0];
     }
 }
 

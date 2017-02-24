@@ -325,10 +325,11 @@ int const streamOpenTimeoutSeconds = 2;
         }
     });
 #else
-    SDLIAPSession *session = self.session;
-    if (session != nil){
+    SDLIAPSession *currentSession = self.session;
+    NSOutputStream *ostream = currentSession.easession.outputStream;
+    if (ostream != nil && ostream.streamStatus == NSStreamStatusOpen){
         dispatch_async(_transmit_queue, ^{
-            [session sendData:data];
+            [currentSession sendData:data];
         });
     }
 #endif // USE_MAIN_THREAD
