@@ -116,7 +116,8 @@
                 break;
             }
         
-        [remainder replaceBytesInRange:NSMakeRange(0, self.bytesWritten) withBytes:NULL length:0];
+            [remainder replaceBytesInRange:NSMakeRange(0, self.bytesWritten) withBytes:NULL length:0];
+        }
     }
 }
 
@@ -172,8 +173,6 @@
     [outStream close];
     [outStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     [outStream setDelegate:nil];
-    
-    self.easession = nil;
   }
 }
 
