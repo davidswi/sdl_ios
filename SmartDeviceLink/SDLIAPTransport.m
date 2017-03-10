@@ -27,7 +27,6 @@ int const streamOpenTimeoutSeconds = 2;
 
 
 @interface SDLIAPTransport () {
-    dispatch_queue_t _transmit_queue;
     BOOL _alreadyDestructed;
 }
 
@@ -49,7 +48,6 @@ int const streamOpenTimeoutSeconds = 2;
         _retryCounter = 0;
         _sessionSetupInProgress = NO;
         _protocolIndexTimer = nil;
-        _transmit_queue = dispatch_queue_create("com.sdl.transport.iap.transmit", DISPATCH_QUEUE_SERIAL);
 
         [self sdl_startEventListening];
         [SDLSiphonServer init];
@@ -307,23 +305,9 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Data Transmission
 
 - (void)sendData:(NSData *)data {
-    dispatch_async(_transmit_queue, ^{
-        NSOutputStream *ostream = self.session.easession.outputStream;
-        NSMutableData *remainder = data.mutableCopy;
-
-        while (remainder.length != 0 && ostream.streamStatus == NSStreamStatusOpen) {
-            if (ostream.hasSpaceAvailable) {
-                NSInteger bytesWritten = [ostream write:remainder.bytes maxLength:remainder.length];
-
-                if (bytesWritten == -1) {
-                    [SDLDebugTool logInfo:[NSString stringWithFormat:@"Error: %@", [ostream streamError]] withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All];
-                    break;
-                }
-
-                [remainder replaceBytesInRange:NSMakeRange(0, bytesWritten) withBytes:NULL length:0];
-            }
-        }
-    });
+    if (self.session != nil && self.session.accessory.connected){
+        [self.session sendData:data];
+    }
 }
 
 

@@ -819,6 +819,8 @@
 		667EA6061C90A22F00C1C988 /* SDLTTSChunkFactory.h in Headers */ = {isa = PBXBuildFile; fileRef = 5D61FBF21A84238C00846EE7 /* SDLTTSChunkFactory.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		667EA6071C90A22F00C1C988 /* SDLStreamingMediaManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 5D53C46B1B7A99B9003526EA /* SDLStreamingMediaManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		667EA6081C90A23000C1C988 /* SmartDeviceLink.h in Headers */ = {isa = PBXBuildFile; fileRef = 5D61FA201A84237100846EE7 /* SmartDeviceLink.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		97877B8D1E73617800144657 /* SDLMutableDataQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = 97877B8B1E73617800144657 /* SDLMutableDataQueue.m */; };
+		97877B8E1E73643F00144657 /* SDLMutableDataQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = 97877B8B1E73617800144657 /* SDLMutableDataQueue.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1678,6 +1680,8 @@
 		660A4B4C1D6793190038B722 /* SDLAppInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDLAppInfo.h; sourceTree = "<group>"; };
 		660A4B4D1D6793190038B722 /* SDLAppInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SDLAppInfo.m; sourceTree = "<group>"; };
 		667EA3F21C909CBF00C1C988 /* libSmartDeviceLinkLibrary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libSmartDeviceLinkLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		97877B8B1E73617800144657 /* SDLMutableDataQueue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SDLMutableDataQueue.m; sourceTree = "<group>"; };
+		97877B8C1E73617800144657 /* SDLMutableDataQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDLMutableDataQueue.h; sourceTree = "<group>"; };
 		E9C32B841AB20B4300F283AF /* NSThread+ThreadIndex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSThread+ThreadIndex.h"; sourceTree = "<group>"; };
 		E9C32B851AB20B4300F283AF /* NSThread+ThreadIndex.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSThread+ThreadIndex.m"; sourceTree = "<group>"; };
 		E9C32B891AB20BA200F283AF /* SDLIAPSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDLIAPSession.h; sourceTree = "<group>"; };
@@ -2674,6 +2678,8 @@
 		5D5934F61A85189500687FB9 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				97877B8B1E73617800144657 /* SDLMutableDataQueue.m */,
+				97877B8C1E73617800144657 /* SDLMutableDataQueue.h */,
 				660A4B2E1D678D720038B722 /* Touches */,
 				5DCC199D1B8221D2004FFAD9 /* HTTP Connection */,
 				E9C32B831AB20B2900F283AF /* @categories */,
@@ -3454,6 +3460,7 @@
 				5D59350F1A855EB300687FB9 /* AppDelegate.m in Sources */,
 				660A4B3A1D678DA70038B722 /* SDLTouch.m in Sources */,
 				5D5935121A855EBE00687FB9 /* main.m in Sources */,
+				97877B8D1E73617800144657 /* SDLMutableDataQueue.m in Sources */,
 				5D4832A81A95191B00252386 /* ConnectionAnimatedTransition.m in Sources */,
 				5D4832A11A92868E00252386 /* ProxyManager.m in Sources */,
 				5D0218F61A8E79C400D1BF62 /* ConnectionTCPTableViewController.m in Sources */,
@@ -3712,6 +3719,7 @@
 				667EA3FD1C909F5000C1C988 /* SDLURLSession.m in Sources */,
 				667EA3FE1C909F5000C1C988 /* SDLURLRequestTask.m in Sources */,
 				667EA3FF1C909F5000C1C988 /* EAAccessory+SDLProtocols.m in Sources */,
+				97877B8E1E73643F00144657 /* SDLMutableDataQueue.m in Sources */,
 				667EA4001C909F5000C1C988 /* EAAccessoryManager+SDLProtocols.m in Sources */,
 				667EA4011C909F5000C1C988 /* NSThread+ThreadIndex.m in Sources */,
 				667EA4021C909F5000C1C988 /* SDLJsonDecoder.m in Sources */,
