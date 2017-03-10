@@ -43,10 +43,10 @@
 - (BOOL)start {
     __weak typeof(self) weakSelf = self;
 
-    NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", _accessory.name, _protocol];
+    NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", self.accessory.name, self.protocol];
     [SDLDebugTool logInfo:logMessage];
 
-    if ((self.easession = [[EASession alloc] initWithAccessory:_accessory forProtocol:_protocol])) {
+    if ((self.easession = [[EASession alloc] initWithAccessory:self.accessory forProtocol:self.protocol])) {
         __strong typeof(self) strongSelf = weakSelf;
 
         [SDLDebugTool logInfo:@"Created Session Object"];
