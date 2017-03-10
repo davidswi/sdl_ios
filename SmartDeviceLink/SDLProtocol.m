@@ -271,8 +271,10 @@ typedef NSNumber SDLServiceTypeBox;
 }
 
 - (void)sdl_logRPCSend:(SDLProtocolMessage *)message {
+#ifdef LOG_RPC
     NSString *logMessage = [NSString stringWithFormat:@"Sending : %@", message];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Protocol toOutput:SDLDebugOutput_File | SDLDebugOutput_DeviceConsole toGroup:self.debugConsoleGroupName];
+#endif // LOG_RPC
 }
 
 // Use for normal messages
@@ -347,11 +349,18 @@ typedef NSNumber SDLServiceTypeBox;
 }
 
 - (void)processMessages {
+    SDLProtocolHeader *header;
     NSMutableString *logMessage = [[NSMutableString alloc] init];
-    UInt8 incomingVersion = [SDLProtocolMessage determineVersion:self.receiveBuffer];
-
-    // If we have enough bytes, create the header.
-    SDLProtocolHeader *header = [SDLProtocolHeader headerForVersion:incomingVersion];
+    
+    if (self.receiveBuffer != nil && self.receiveBuffer.length > 0){
+        UInt8 incomingVersion = [SDLProtocolMessage determineVersion:self.receiveBuffer];
+        // If we have enough bytes, create the header.
+        header = [SDLProtocolHeader headerForVersion:incomingVersion];
+        if (header.version == 255){
+            return;
+        }
+    }
+    
     NSUInteger headerSize = header.size;
     if (self.receiveBuffer.length >= headerSize) {
         [header parse:self.receiveBuffer];

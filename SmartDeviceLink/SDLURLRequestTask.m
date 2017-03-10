@@ -97,12 +97,11 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    if (self != nil && self.delegate != nil){
         self.completionHandler([self.mutableData copy], self.response, nil);
-
         self.state = SDLURLRequestTaskStateCompleted;
         [self.delegate taskDidFinish:self];
-    });
+    }
 }
 
 @end

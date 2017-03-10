@@ -43,6 +43,7 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
         _easession = nil;
         _isInputStreamOpen = NO;
         _isOutputStreamOpen = NO;
+        _canceledSema = dispatch_semaphore_create(0);
     }
     return self;
 }
@@ -283,8 +284,6 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
     self.protocol = nil;
     self.streamDelegate = nil;
     self.easession = nil;
-    self.ioStreamThread =  nil;
-    self.canceledSemaphore = nil;
     [SDLDebugTool logInfo:@"SDLIAPSession Dealloc"];
 }
 

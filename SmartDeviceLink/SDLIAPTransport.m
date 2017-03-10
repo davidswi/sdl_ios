@@ -91,7 +91,6 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_accessoryConnected:(NSNotification *)notification {
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-
     self.retryCounter = 0;
     if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground){
         self.bgStreamTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"IAPConnectLoop" expirationHandler:^{
@@ -356,9 +355,9 @@ int const streamOpenTimeoutSeconds = 2;
 
             // Determine protocol string of the data session, then create that data session
             NSString *indexedProtocolString = [NSString stringWithFormat:@"%@%@", indexedProtocolStringPrefix, @(buf[0])];
-            dispatch_sync(dispatch_get_main_queue(), ^{
+          // dispatch_async(dispatch_get_main_queue() ^{
                 [strongSelf sdl_createIAPDataSessionWithAccessory:accessory forProtocol:indexedProtocolString];
-            });
+          // });
         }
     };
 }
@@ -406,7 +405,7 @@ int const streamOpenTimeoutSeconds = 2;
         __strong typeof(weakSelf) strongSelf = weakSelf;
 
         uint8_t buf[[SDLGlobals globals].maxMTUSize];
-        while ([istream hasBytesAvailable]) {
+        while (istream.streamStatus == NSStreamStatusOpen && istream.hasBytesAvailable) {
             NSInteger bytesRead = [istream read:buf maxLength:[SDLGlobals globals].maxMTUSize];
             NSData *dataIn = [NSData dataWithBytes:buf length:bytesRead];
 
