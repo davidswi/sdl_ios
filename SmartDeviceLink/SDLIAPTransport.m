@@ -105,13 +105,21 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_accessoryDisconnected:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"Accessory Disconnected Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    [self sdl_stopEventListening];
 
     // Only check for the data session, the control session is handled separately
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
     if (accessory.connectionID == self.session.accessory.connectionID) {
+        if (self.bgStreamTaskId != UIBackgroundTaskInvalid){
+            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
+            self.bgStreamTaskId = UIBackgroundTaskInvalid;
+        }
         self.sessionSetupInProgress = NO;
         [self disconnect];
         [self.delegate onTransportDisconnected];
+    }
+    else{
+         [SDLDebugTool logInfo:@"Accessory connection ID mismatch!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     }
 }
 
@@ -303,8 +311,8 @@ int const streamOpenTimeoutSeconds = 2;
         NSOutputStream *ostream = self.session.easession.outputStream;
         NSMutableData *remainder = data.mutableCopy;
 
-        while (remainder.length != 0) {
-            if (ostream.streamStatus == NSStreamStatusOpen && ostream.hasSpaceAvailable) {
+        while (remainder.length != 0 && ostream.streamStatus == NSStreamStatusOpen) {
+            if (ostream.hasSpaceAvailable) {
                 NSInteger bytesWritten = [ostream write:remainder.bytes maxLength:remainder.length];
 
                 if (bytesWritten == -1) {
@@ -489,7 +497,6 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
         _alreadyDestructed = YES;
-        [self sdl_stopEventListening];
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;
