@@ -27,7 +27,6 @@ int const streamOpenTimeoutSeconds = 2;
 
 
 @interface SDLIAPTransport () {
-    dispatch_queue_t _transmit_queue;
     BOOL _alreadyDestructed;
 }
 
@@ -49,7 +48,6 @@ int const streamOpenTimeoutSeconds = 2;
         _retryCounter = 0;
         _sessionSetupInProgress = NO;
         _protocolIndexTimer = nil;
-        _transmit_queue = dispatch_queue_create("com.sdl.transport.iap.transmit", DISPATCH_QUEUE_SERIAL);
 
         [self sdl_startEventListening];
         [SDLSiphonServer init];
@@ -104,13 +102,21 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_accessoryDisconnected:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"Accessory Disconnected Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    [self sdl_stopEventListening];
 
     // Only check for the data session, the control session is handled separately
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
     if (accessory.connectionID == self.session.accessory.connectionID) {
+        if (self.bgStreamTaskId != UIBackgroundTaskInvalid){
+            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
+            self.bgStreamTaskId = UIBackgroundTaskInvalid;
+        }
         self.sessionSetupInProgress = NO;
         [self disconnect];
         [self.delegate onTransportDisconnected];
+    }
+    else{
+         [SDLDebugTool logInfo:@"Accessory connection ID mismatch!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     }
 }
 
@@ -137,22 +143,14 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Stream Lifecycle
 
 - (void)connect {
-  if(self.session) {
-    [self.session stop];
-    self.session = nil;
-    self.sessionSetupInProgress = NO;
-  }
-  
-  self.sessionSetupInProgress = YES;
-  [self sdl_establishSession];
-    /*if (!self.session && !self.sessionSetupInProgress) {
+    if (!self.session && !self.sessionSetupInProgress) {
         self.sessionSetupInProgress = YES;
         [self sdl_establishSession];
     } else if (self.session) {
         [SDLDebugTool logInfo:@"Session already established."];
     } else {
         [SDLDebugTool logInfo:@"Session setup already in progress."];
-    }*/
+    }
 }
 
 - (void)disconnect {
@@ -306,32 +304,9 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Data Transmission
 
 - (void)sendData:(NSData *)data {
-#if USE_MAIN_THREAD
-    dispatch_async(_transmit_queue, ^{
-        NSOutputStream *ostream = self.session.easession.outputStream;
-        NSMutableData *remainder = data.mutableCopy;
-
-        while (remainder.length != 0) {
-            if (ostream.streamStatus == NSStreamStatusOpen && ostream.hasSpaceAvailable) {
-                NSInteger bytesWritten = [ostream write:remainder.bytes maxLength:remainder.length];
-
-                if (bytesWritten == -1) {
-                    [SDLDebugTool logInfo:[NSString stringWithFormat:@"Error: %@", [ostream streamError]] withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All];
-                    break;
-                }
-
-                [remainder replaceBytesInRange:NSMakeRange(0, bytesWritten) withBytes:NULL length:0];
-            }
-        }
-    });
-#else
-    SDLIAPSession *session = self.session;
-    if (session != nil){
-        dispatch_async(_transmit_queue, ^{
-            [session sendData:data];
-        });
+    if (self.session != nil && self.session.accessory.connected){
+        [self.session sendData:data];
     }
-#endif // USE_MAIN_THREAD
 }
 
 
@@ -505,7 +480,6 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
         _alreadyDestructed = YES;
-        [self sdl_stopEventListening];
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;
