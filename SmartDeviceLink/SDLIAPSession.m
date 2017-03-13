@@ -43,7 +43,6 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
         _easession = nil;
         _isInputStreamOpen = NO;
         _isOutputStreamOpen = NO;
-        _canceledSema = dispatch_semaphore_create(0);
     }
     return self;
 }
