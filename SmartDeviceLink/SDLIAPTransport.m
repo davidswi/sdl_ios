@@ -355,11 +355,9 @@ int const streamOpenTimeoutSeconds = 2;
 
             // Determine protocol string of the data session, then create that data session
             NSString *indexedProtocolString = [NSString stringWithFormat:@"%@%@", indexedProtocolStringPrefix, @(buf[0])];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (strongSelf.session.accessory && strongSelf.session.accessory.isConnected){
-                    [strongSelf sdl_createIAPDataSessionWithAccessory:accessory forProtocol:indexedProtocolString];
-                }
-            });
+            if (accessory.isConnected){
+                [strongSelf sdl_createIAPDataSessionWithAccessory:accessory forProtocol:indexedProtocolString];
+            }
         }
     };
 }
