@@ -112,7 +112,10 @@ int const streamOpenTimeoutSeconds = 2;
 
     // Only check for the data session, the control session is handled separately
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
-    if (accessory.connectionID == self.session.accessory.connectionID) {
+    if (accessory.connectionID != self.session.accessory.connectionID) {
+         [SDLDebugTool logInfo:@"Accessory connection ID mismatch!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    }
+    if ([accessory.name isEqualToString:self.session.accessory.name]){
         if (self.bgStreamTaskId != UIBackgroundTaskInvalid){
             [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
             self.bgStreamTaskId = UIBackgroundTaskInvalid;
@@ -120,9 +123,6 @@ int const streamOpenTimeoutSeconds = 2;
         self.sessionSetupInProgress = NO;
         [self disconnect];
         [self.delegate onTransportDisconnected];
-    }
-    else{
-         [SDLDebugTool logInfo:@"Accessory connection ID mismatch!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     }
 }
 
