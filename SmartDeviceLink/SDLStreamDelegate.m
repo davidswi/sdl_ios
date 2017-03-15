@@ -89,4 +89,13 @@ SDLStreamEndHandler defaultStreamEndHandler = ^(NSStream *stream) {
     [SDLDebugTool logInfo:@"Stream Event End"];
 };
 
+- (void)dealloc{
+    [SDLDebugTool logInfo:@"SDLStreamDelegate dealloc"];
+    self.streamOpenHandler = nil;
+    self.streamEndHandler = nil;
+    self.streamErrorHandler = nil;
+    self.streamHasBytesHandler = nil;
+    self.streamHasSpaceHandler = nil;
+}
+
 @end
