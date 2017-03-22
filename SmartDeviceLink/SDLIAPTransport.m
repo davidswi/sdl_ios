@@ -32,9 +32,10 @@ int const streamOpenTimeoutSeconds = 2;
 }
 
 @property (assign) int retryCounter;
+@property (assign) BOOL isDelayedConnect;
 @property (assign) BOOL sessionSetupInProgress;
 @property (strong) SDLTimer *protocolIndexTimer;
-@property (nonatomic, assign) UIBackgroundTaskIdentifier bgStreamTaskId;
+@property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTaskId;
 
 @end
 
@@ -47,8 +48,10 @@ int const streamOpenTimeoutSeconds = 2;
         _session = nil;
         _controlSession = nil;
         _retryCounter = 0;
+        _isDelayedConnect = NO;
         _sessionSetupInProgress = NO;
         _protocolIndexTimer = nil;
+        _backgroundTaskId = UIBackgroundTaskInvalid;
 
         [self sdl_startEventListening];
         [SDLSiphonServer init];
@@ -90,6 +93,21 @@ int const streamOpenTimeoutSeconds = 2;
     [[EAAccessoryManager sharedAccessoryManager] unregisterForLocalNotifications];
 }
 
+- (void)sdl_backgroundTaskStart {
+    if (self.backgroundTaskId == UIBackgroundTaskInvalid) {
+        self.backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"SDLIAPConnectionLoop" expirationHandler:^{
+            [self sdl_backgroundTaskEnd];
+        }];
+    }
+}
+
+- (void)sdl_backgroundTaskEnd {
+    if (self.backgroundTaskId != UIBackgroundTaskInvalid) {
+        [[UIApplication sharedApplication] endBackgroundTask:self.backgroundTaskId];
+        self.backgroundTaskId = UIBackgroundTaskInvalid;
+    }
+}
+
 #pragma mark - EAAccessory Notifications
 
 - (void)sdl_accessoryConnected:(NSNotification *)notification {
@@ -99,10 +117,9 @@ int const streamOpenTimeoutSeconds = 2;
     
     self.retryCounter = 0;
     if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground){
-        self.bgStreamTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"IAPConnectLoop" expirationHandler:^{
-            self.bgStreamTaskId = UIBackgroundTaskInvalid;
-        }];
+        [self sdl_backgroundTaskStart];
     }
+    self.isDelayedConnect = YES;
     [self performSelector:@selector(sdl_connect:) withObject:accessory afterDelay:self.retryDelay];
 }
 
@@ -115,32 +132,27 @@ int const streamOpenTimeoutSeconds = 2;
     if (accessory.connectionID != self.session.accessory.connectionID) {
          [SDLDebugTool logInfo:@"Accessory connection ID mismatch!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     }
-    if ([accessory.name isEqualToString:self.session.accessory.name]){
-        if (self.bgStreamTaskId != UIBackgroundTaskInvalid){
-            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
-            self.bgStreamTaskId = UIBackgroundTaskInvalid;
-        }
-        self.sessionSetupInProgress = NO;
-        [self disconnect];
-        [self.delegate onTransportDisconnected];
+
+    if (self.sessionSetupInProgress) {
+        [self.protocolIndexTimer cancel];
+    	self.sessionSetupInProgress = NO;
     }
+    [self sdl_backgroundTaskEnd];
+    [self disconnect];
+    [self.delegate onTransportDisconnected];
 }
 
 - (void)sdl_applicationWillEnterForeground:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"App Foregrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    [self sdl_backgroundTaskEnd];
     self.retryCounter = 0;
     [self sdl_connect:nil];
 }
 
 - (void)sdl_applicationDidEnterBackground:(NSNotification *)notification {
-    if (self.sessionSetupInProgress){
-        [SDLDebugTool logInfo:@"App Backgrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-        self.bgStreamTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"IAPConnectLoop" expirationHandler:^{
-            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
-            self.bgStreamTaskId = UIBackgroundTaskInvalid;
-        }];
-        
-        self.retryCounter = 0;
+    [SDLDebugTool logInfo:@"App Backgrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    if (self.isDelayedConnect) {
+        [self sdl_backgroundTaskStart];
         [self sdl_retryEstablishSession];
     }
 }
@@ -153,6 +165,7 @@ int const streamOpenTimeoutSeconds = 2;
 }
 
 - (void)sdl_connect:(EAAccessory *)accessory{
+    self.isDelayedConnect = NO;
     if (!self.session && !self.sessionSetupInProgress) {
         self.sessionSetupInProgress = YES;
         [self sdl_establishSession:accessory];
@@ -165,7 +178,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)disconnect {
     [SDLDebugTool logInfo:@"IAP Disconnecting" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-
+    self.isDelayedConnect = NO;
     // Only disconnect the data session, the control session does not stay open and is handled separately
     if (self.session != nil) {
         [self.session stop];
@@ -309,10 +322,7 @@ int const streamOpenTimeoutSeconds = 2;
     // Data Session Opened
     if (![controlProtocolString isEqualToString:session.protocol]) {
         self.sessionSetupInProgress = NO;
-        if (self.bgStreamTaskId != UIBackgroundTaskInvalid){
-            [[UIApplication sharedApplication] endBackgroundTask:self.bgStreamTaskId];
-            self.bgStreamTaskId = UIBackgroundTaskInvalid;
-        }
+        [self sdl_backgroundTaskEnd];
         [SDLDebugTool logInfo:@"Data Session Established"];
         [self.delegate onTransportConnected];
     }
@@ -513,6 +523,7 @@ int const streamOpenTimeoutSeconds = 2;
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;
+        [self sdl_backgroundTaskEnd];
     }
 }
 
