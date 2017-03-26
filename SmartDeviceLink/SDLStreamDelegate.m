@@ -5,9 +5,9 @@
 #import "SDLStreamDelegate.h"
 #import "SDLDebugTool.h"
 
-@interface SDLStreamDelegate () {
-    dispatch_queue_t _input_stream_queue;
-}
+@interface SDLStreamDelegate ()
+
+@property(nonatomic, strong) dispatch_queue_t input_stream_queue;
 
 @end
 
@@ -28,36 +28,43 @@
     return self;
 }
 
+- (void)clearHandlers {
+    self.streamEndHandler = nil;
+    self.streamHasBytesHandler = nil;
+    self.streamOpenHandler  = nil;
+    self.streamHasBytesHandler = nil;
+}
+
 - (void)stream:(NSStream *)stream handleEvent:(NSStreamEvent)eventCode {
     switch (eventCode) {
         case NSStreamEventOpenCompleted: {
-            if (_streamOpenHandler) {
+            if (self.streamOpenHandler) {
                 self.streamOpenHandler(stream);
             }
             break;
         }
         case NSStreamEventHasBytesAvailable: {
-            if (_streamHasBytesHandler) {
-                dispatch_async(_input_stream_queue, ^{
+            if (self.streamHasBytesHandler) {
+                dispatch_async(self.input_stream_queue, ^{
                     self.streamHasBytesHandler((NSInputStream *)stream);
                 });
             }
             break;
         }
         case NSStreamEventHasSpaceAvailable: {
-            if (_streamHasSpaceHandler) {
+            if (self.streamHasSpaceHandler) {
                 self.streamHasSpaceHandler((NSOutputStream *)stream);
             }
             break;
         }
         case NSStreamEventErrorOccurred: {
-            if (_streamErrorHandler) {
+            if (self.streamErrorHandler) {
                 self.streamErrorHandler(stream);
             }
             break;
         }
         case NSStreamEventEndEncountered: {
-            if (_streamEndHandler) {
+            if (self.streamEndHandler) {
                 self.streamEndHandler(stream);
             }
             break;
@@ -91,6 +98,7 @@ SDLStreamEndHandler defaultStreamEndHandler = ^(NSStream *stream) {
 
 - (void)dealloc{
     [SDLDebugTool logInfo:@"SDLStreamDelegate dealloc"];
+    self.input_stream_queue = nil;
     self.streamOpenHandler = nil;
     self.streamEndHandler = nil;
     self.streamErrorHandler = nil;
