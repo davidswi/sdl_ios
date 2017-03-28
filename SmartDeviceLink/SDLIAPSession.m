@@ -50,45 +50,36 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
 
 #pragma mark - Public Stream Lifecycle
 
-- (BOOL)start {
-    __weak typeof(self) weakSelf = self;
-    
-    @try {
-        if (self.accessory && self.protocol){
-            NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", self.accessory.name, self.protocol];
-            [SDLDebugTool logInfo:logMessage];
-            
-            self.easession = [[EASession alloc] initWithAccessory:self.accessory forProtocol:self.protocol];
-            
-            if (!self.easession) {
-                [SDLDebugTool logInfo:@"Error: Could Not Create Session Object"];
-                return NO;
-            }
-            
-            [SDLDebugTool logInfo:@"Created Session Object"];
-            
-            self.streamDelegate.streamErrorHandler = [self streamErroredHandler];
-            self.streamDelegate.streamOpenHandler = [self streamOpenedHandler];
-            if (!self.isDataSession) {
-                [self startStream:self.easession.outputStream];
-                [self startStream:self.easession.inputStream];
-            } else {
-                self.streamDelegate.streamHasSpaceHandler = [self streamHasSpaceHandler];
-                // Start I/O event loop processing events in iAP channel
-                self.ioStreamThread = [[NSThread alloc] initWithTarget:self selector:@selector(sdl_accessoryEventLoop) object:nil];
-                [self.ioStreamThread setName:ioStreamThreadName];
-                [self.ioStreamThread start];
-            }
-            
-            return YES;
-        }
-        else {
+- (BOOL)start {    
+    if (self.accessory && self.protocol){
+        NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", self.accessory.name, self.protocol];
+        [SDLDebugTool logInfo:logMessage];
+        
+        self.easession = [[EASession alloc] initWithAccessory:self.accessory forProtocol:self.protocol];
+        
+        if (!self.easession) {
+            [SDLDebugTool logInfo:@"Error: Could Not Create Session Object"];
             return NO;
         }
-    } @catch (NSException *exception) {
-        NSString *logMessage = [NSString stringWithFormat:@"Failed to create session: %@", exception];
-        [SDLDebugTool logInfo:logMessage];
-
+        
+        [SDLDebugTool logInfo:@"Created Session Object"];
+        
+        self.streamDelegate.streamErrorHandler = [self streamErroredHandler];
+        self.streamDelegate.streamOpenHandler = [self streamOpenedHandler];
+        if (!self.isDataSession) {
+            [self startStream:self.easession.outputStream];
+            [self startStream:self.easession.inputStream];
+        } else {
+            self.streamDelegate.streamHasSpaceHandler = [self streamHasSpaceHandler];
+            // Start I/O event loop processing events in iAP channel
+            self.ioStreamThread = [[NSThread alloc] initWithTarget:self selector:@selector(sdl_accessoryEventLoop) object:nil];
+            [self.ioStreamThread setName:ioStreamThreadName];
+            [self.ioStreamThread start];
+        }
+        
+        return YES;
+    }
+    else {
         return NO;
     }
 }
