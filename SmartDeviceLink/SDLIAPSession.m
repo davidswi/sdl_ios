@@ -50,19 +50,22 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
 
 #pragma mark - Public Stream Lifecycle
 
-- (BOOL)start {
-    __weak typeof(self) weakSelf = self;
-
-    NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", self.accessory.name, self.protocol];
-    [SDLDebugTool logInfo:logMessage];
-
-    if ((self.easession = [[EASession alloc] initWithAccessory:self.accessory forProtocol:self.protocol])) {
-        __strong typeof(self) strongSelf = weakSelf;
-
+- (BOOL)start {    
+    if (self.accessory && self.protocol){
+        NSString *logMessage = [NSString stringWithFormat:@"Opening EASession withAccessory:%@ forProtocol:%@", self.accessory.name, self.protocol];
+        [SDLDebugTool logInfo:logMessage];
+        
+        self.easession = [[EASession alloc] initWithAccessory:self.accessory forProtocol:self.protocol];
+        
+        if (!self.easession) {
+            [SDLDebugTool logInfo:@"Error: Could Not Create Session Object"];
+            return NO;
+        }
+        
         [SDLDebugTool logInfo:@"Created Session Object"];
-
-        strongSelf.streamDelegate.streamErrorHandler = [self streamErroredHandler];
-        strongSelf.streamDelegate.streamOpenHandler = [self streamOpenedHandler];
+        
+        self.streamDelegate.streamErrorHandler = [self streamErroredHandler];
+        self.streamDelegate.streamOpenHandler = [self streamOpenedHandler];
         if (!self.isDataSession) {
             [self startStream:self.easession.outputStream];
             [self startStream:self.easession.inputStream];
@@ -73,11 +76,10 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
             [self.ioStreamThread setName:ioStreamThreadName];
             [self.ioStreamThread start];
         }
-
+        
         return YES;
-
-    } else {
-        [SDLDebugTool logInfo:@"Error: Could Not Create Session Object"];
+    }
+    else {
         return NO;
     }
 }
@@ -99,13 +101,14 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
         self.ioStreamThread = nil;
         self.isDataSession = NO;
     }
-    self.easession = nil;
 }
 
-- (void)sendData:(NSData *)data{
+- (void)sendData:(NSData *)data {
+   if (data != nil && data.length){
     // Enqueue the data for transmission on the IO thread
     [self.sendDataQueue enqueueBuffer:data.mutableCopy];
-}
+   }
+}    
 
 - (BOOL)sdl_dequeueAndWriteToOutputStream:(NSError **)error{
     NSOutputStream *ostream = self.easession.outputStream;
@@ -209,6 +212,9 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
         status1 != NSStreamStatusClosed) {
         [stream close];
     }
+    else{
+        NSLog(@"ERROR: Not closing stream!!!!");
+    }
 
     [stream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     [stream setDelegate:nil];
@@ -283,6 +289,8 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
     self.protocol = nil;
     self.streamDelegate = nil;
     self.easession = nil;
+    self.ioStreamThread =  nil;
+    self.canceledSemaphore = nil;
     [SDLDebugTool logInfo:@"SDLIAPSession Dealloc"];
 }
 
