@@ -21,6 +21,7 @@
 NSString *const legacyProtocolString = @"com.ford.sync.prot0";
 NSString *const controlProtocolString = @"com.smartdevicelink.prot0";
 NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
+NSString *const backgroundTaskName = @"com.sdl.transport.iap.connectloop";
 
 int const createSessionRetries = 5;
 int const protocolIndexTimeoutSeconds = 20;
@@ -77,8 +78,6 @@ int const streamOpenTimeoutSeconds = 2;
                                                  name:EAAccessoryDidDisconnectNotification
                                                object:nil];
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sdl_applicationDidEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(sdl_applicationWillEnterForeground:)
                                                  name:UIApplicationWillEnterForegroundNotification
@@ -94,11 +93,13 @@ int const streamOpenTimeoutSeconds = 2;
 }
 
 - (void)sdl_backgroundTaskStart {
-    if (self.backgroundTaskId == UIBackgroundTaskInvalid) {
-        self.backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:@"SDLIAPConnectionLoop" expirationHandler:^{
-            [self sdl_backgroundTaskEnd];
-        }];
+    if (self.backgroundTaskId != UIBackgroundTaskInvalid) {
+        return;
     }
+    
+    self.backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:backgroundTaskName expirationHandler:^{
+        [self sdl_backgroundTaskEnd];
+    }];
 }
 
 - (void)sdl_backgroundTaskEnd {
@@ -108,18 +109,16 @@ int const streamOpenTimeoutSeconds = 2;
     }
 }
 
+
 #pragma mark - EAAccessory Notifications
 
 - (void)sdl_accessoryConnected:(NSNotification *)notification {
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
+    [self sdl_backgroundTaskStart];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    
+
     self.retryCounter = 0;
-    if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground){
-        [self sdl_backgroundTaskStart];
-    }
-    self.isDelayedConnect = YES;
     [self performSelector:@selector(sdl_connect:) withObject:accessory afterDelay:self.retryDelay];
 }
 
@@ -149,14 +148,6 @@ int const streamOpenTimeoutSeconds = 2;
     [self sdl_connect:nil];
 }
 
-- (void)sdl_applicationDidEnterBackground:(NSNotification *)notification {
-    [SDLDebugTool logInfo:@"App Backgrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    if (self.isDelayedConnect) {
-        [self sdl_backgroundTaskStart];
-        [self sdl_retryEstablishSession];
-    }
-}
-
 
 #pragma mark - Stream Lifecycle
 
@@ -164,8 +155,7 @@ int const streamOpenTimeoutSeconds = 2;
     [self sdl_connect:nil];
 }
 
-- (void)sdl_connect:(EAAccessory *)accessory{
-    self.isDelayedConnect = NO;
+- (void)sdl_connect:(EAAccessory *)accessory {
     if (!self.session && !self.sessionSetupInProgress) {
         self.sessionSetupInProgress = YES;
         [self sdl_establishSession:accessory];
@@ -178,7 +168,6 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)disconnect {
     [SDLDebugTool logInfo:@"IAP Disconnecting" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    self.isDelayedConnect = NO;
     // Only disconnect the data session, the control session does not stay open and is handled separately
     if (self.session != nil) {
         [self.session stop];
@@ -186,19 +175,18 @@ int const streamOpenTimeoutSeconds = 2;
     }
 }
 
+
 #pragma mark - Creating Session Streams
 
-- (BOOL)sdl_tryConnectAccessory:(EAAccessory *)accessory{
+- (BOOL)sdl_tryConnectAccessory:(EAAccessory *)accessory {
     BOOL connecting = NO;
     
     if ([accessory supportsProtocol:controlProtocolString]) {
         [self sdl_createIAPControlSessionWithAccessory:accessory];
         connecting = YES;
-    } else {
-        if ([accessory supportsProtocol:legacyProtocolString]) {
+    } else if ([accessory supportsProtocol:legacyProtocolString]) {
             [self sdl_createIAPControlSessionWithAccessory:accessory];
             connecting = YES;
-        }
     }
     
     return connecting;
@@ -522,11 +510,11 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
         _alreadyDestructed = YES;
-        if (!self.session.isStopped) {
+        if (self.session && !self.session.isStopped) {
             [self.session stop];
         }
         
-        if (!self.controlSession.isStopped) {
+        if (self.session && !self.controlSession.isStopped) {
             [self.controlSession stop];
         }
         self.controlSession = nil;
