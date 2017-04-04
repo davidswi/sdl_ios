@@ -389,9 +389,11 @@ int const streamOpenTimeoutSeconds = 2;
 
             // Destroy the control session
             [strongSelf.protocolIndexTimer cancel];
-            [strongSelf.controlSession stop];
-            strongSelf.controlSession.streamDelegate = nil;
-            strongSelf.controlSession = nil;
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                [strongSelf.controlSession stop];
+                strongSelf.controlSession.streamDelegate = nil;
+                strongSelf.controlSession = nil;
+            });
 
             // Determine protocol string of the data session, then create that data session
             NSString *indexedProtocolString = [NSString stringWithFormat:@"%@%@", indexedProtocolStringPrefix, @(buf[0])];
