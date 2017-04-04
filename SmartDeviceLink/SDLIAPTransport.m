@@ -522,10 +522,12 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
         _alreadyDestructed = YES;
-        if (self.session.easession.inputStream.streamStatus != NSStreamStatusClosed ||
-            self.session.easession.outputStream.streamStatus != NSStreamStatusClosed) {
-            NSLog(@"Data session streams not closed!!!");
+        if (!self.session.isStopped) {
             [self.session stop];
+        }
+        
+        if (!self.controlSession.isStopped) {
+            [self.controlSession stop];
         }
         self.controlSession = nil;
         self.session = nil;
