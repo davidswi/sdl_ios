@@ -525,6 +525,7 @@ int const streamOpenTimeoutSeconds = 2;
         if (self.session.easession.inputStream.streamStatus != NSStreamStatusClosed ||
             self.session.easession.outputStream.streamStatus != NSStreamStatusClosed) {
             NSLog(@"Data session streams not closed!!!");
+            [self.session stop];
         }
         self.controlSession = nil;
         self.session = nil;
