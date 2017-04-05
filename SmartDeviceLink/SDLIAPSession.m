@@ -102,7 +102,7 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
 }
 
 - (BOOL)isStopped {
-    return !self.isOutputStreamOpen && !self.isOutputStreamOpen;
+    return !self.isOutputStreamOpen && !self.isInputStreamOpen;
 }
 
 - (void)sendData:(NSData *)data {
