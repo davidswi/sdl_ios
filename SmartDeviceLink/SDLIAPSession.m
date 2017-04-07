@@ -47,7 +47,6 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
     return self;
 }
 
-
 #pragma mark - Public Stream Lifecycle
 
 - (BOOL)start {    
@@ -85,7 +84,6 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
 }
 
 - (void)stop {
-
     if (!self.isDataSession) {
         [self stopStream:self.easession.outputStream];
         [self stopStream:self.easession.inputStream];
@@ -101,6 +99,10 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
         self.ioStreamThread = nil;
         self.isDataSession = NO;
     }
+}
+
+- (BOOL)isStopped {
+    return !self.isOutputStreamOpen && !self.isInputStreamOpen;
 }
 
 - (void)sendData:(NSData *)data {
@@ -223,8 +225,10 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
     if (status2 == NSStreamStatusClosed) {
         if (stream == [self.easession inputStream]) {
             [SDLDebugTool logInfo:@"Input Stream Closed"];
+            self.isInputStreamOpen = NO;
         } else if (stream == [self.easession outputStream]) {
             [SDLDebugTool logInfo:@"Output Stream Closed"];
+            self.isOutputStreamOpen = NO;
         }
     }
 }
