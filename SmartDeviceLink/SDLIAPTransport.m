@@ -124,7 +124,6 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_accessoryDisconnected:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"Accessory Disconnected Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    [self sdl_stopEventListening];
 
     // Only check for the data session, the control session is handled separately
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
@@ -168,6 +167,9 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)disconnect {
     [SDLDebugTool logInfo:@"IAP Disconnecting" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    // Stop event listening here so that even if the transport is disconnected by the proxy
+    // we unregister for accessory local notifications
+    [self sdl_stopEventListening];
     // Only disconnect the data session, the control session does not stay open and is handled separately
     if (self.session != nil) {
         [self.session stop];
@@ -457,6 +459,7 @@ int const streamOpenTimeoutSeconds = 2;
 
         [SDLDebugTool logInfo:@"Data Stream Error"];
         [strongSelf.session stop];
+        strongSelf.session.streamDelegate = nil;
 
         if (![legacyProtocolString isEqualToString:strongSelf.session.protocol]) {
             [strongSelf sdl_retryEstablishSession];
@@ -513,8 +516,7 @@ int const streamOpenTimeoutSeconds = 2;
         if (self.session && !self.session.isStopped) {
             [self.session stop];
         }
-        
-        if (self.session && !self.controlSession.isStopped) {
+        if (self.controlSession && !self.controlSession.isStopped) {
             [self.controlSession stop];
         }
         self.controlSession = nil;
