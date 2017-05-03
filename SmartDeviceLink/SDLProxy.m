@@ -2,6 +2,7 @@
 
 #import "SDLProxy.h"
 
+#import <ExternalAccessory/ExternalAccessory.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
@@ -17,9 +18,7 @@
 #import "SDLJsonEncoder.h"
 #import "SDLLanguage.h"
 #import "SDLLayoutMode.h"
-#import "SDLLockScreenManager.h"
-#import "SDLLockScreenManager.h"
-#import "SDLLockScreenManager.h"
+#import "SDLLockScreenStatusManager.h"
 #import "SDLNames.h"
 #import "SDLOnHMIStatus.h"
 #import "SDLOnSystemRequest.h"
@@ -34,7 +33,6 @@
 #import "SDLRPCPayload.h"
 #import "SDLRPCPayload.h"
 #import "SDLRPCPayload.h"
-#import "SDLRPCRequestFactory.h"
 #import "SDLRPCResponse.h"
 #import "SDLRegisterAppInterfaceResponse.h"
 #import "SDLRequestType.h"
@@ -51,14 +49,14 @@ typedef NSString SDLVehicleMake;
 typedef void (^URLSessionTaskCompletionHandler)(NSData *data, NSURLResponse *response, NSError *error);
 typedef void (^URLSessionDownloadTaskCompletionHandler)(NSURL *location, NSURLResponse *response, NSError *error);
 
-NSString *const SDLProxyVersion = @"4.2.2.Xevo.04042017";
+NSString *const SDLProxyVersion = @"4.5.5";
 const float startSessionTime = 10.0;
 const float notifyProxyClosedDelay = 0.1;
 const int POLICIES_CORRELATION_ID = 65535;
 
 
 @interface SDLProxy () {
-    SDLLockScreenManager *_lsm;
+    SDLLockScreenStatusManager *_lsm;
 }
 
 @property (copy, nonatomic) NSString *appId;
@@ -76,7 +74,7 @@ const int POLICIES_CORRELATION_ID = 65535;
 - (instancetype)initWithTransport:(SDLAbstractTransport *)transport protocol:(SDLAbstractProtocol *)protocol delegate:(NSObject<SDLProxyListener> *)theDelegate {
     if (self = [super init]) {
         _debugConsoleGroupName = @"default";
-        _lsm = [[SDLLockScreenManager alloc] init];
+        _lsm = [[SDLLockScreenStatusManager alloc] init];
         _alreadyDestructed = NO;
 
         _mutableProxyListeners = [NSMutableSet setWithObject:theDelegate];
@@ -90,6 +88,7 @@ const int POLICIES_CORRELATION_ID = 65535;
         [self.transport connect];
 
         [SDLDebugTool logInfo:@"SDLProxy initWithTransport"];
+        [[EAAccessoryManager sharedAccessoryManager] registerForLocalNotifications];
     }
 
     return self;
@@ -100,6 +99,7 @@ const int POLICIES_CORRELATION_ID = 65535;
         _alreadyDestructed = YES;
 
         [[NSNotificationCenter defaultCenter] removeObserver:self];
+        [[EAAccessoryManager sharedAccessoryManager] unregisterForLocalNotifications];
 
         [[SDLURLSession defaultSession] cancelAllTasks];
 
@@ -127,8 +127,8 @@ const int POLICIES_CORRELATION_ID = 65535;
 }
 
 - (void)dealloc {
-    [SDLDebugTool logInfo:@"SDLProxy Dealloc" withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:_debugConsoleGroupName];
     [self destructObjects];
+    [SDLDebugTool logInfo:@"SDLProxy Dealloc" withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:_debugConsoleGroupName];
 }
 
 - (void)notifyProxyClosed {
@@ -181,6 +181,9 @@ const int POLICIES_CORRELATION_ID = 65535;
 
 - (SDLStreamingMediaManager *)streamingMediaManager {
     if (_streamingMediaManager == nil) {
+        if (self.displayCapabilities == nil) {
+            return nil;
+        }
         _streamingMediaManager = [[SDLStreamingMediaManager alloc] initWithProtocol:self.protocol displayCapabilities:self.displayCapabilities];
         [self.protocol.protocolDelegateTable addObject:_streamingMediaManager];
         [self.mutableProxyListeners addObject:_streamingMediaManager.touchManager];
@@ -199,19 +202,15 @@ const int POLICIES_CORRELATION_ID = 65535;
 
     for (Class securityManagerClass in securityManagerClasses) {
         if (![securityManagerClass conformsToProtocol:@protocol(SDLSecurityType)]) {
-            /*
             NSString *reason = [NSString stringWithFormat:@"Invalid security manager: Class %@ does not conform to SDLSecurityType protocol", NSStringFromClass(securityManagerClass)];
             @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:nil];
-            */
         }
 
         NSSet<NSString *> *vehicleMakes = [securityManagerClass availableMakes];
 
         if (vehicleMakes == nil || vehicleMakes.count == 0) {
-            /*
             NSString *reason = [NSString stringWithFormat:@"Invalid security manager: Failed to retrieve makes for class %@", NSStringFromClass(securityManagerClass)];
             @throw [NSException exceptionWithName:NSInternalInconsistencyException reason:reason userInfo:nil];
-            */
         }
 
         for (NSString *vehicleMake in vehicleMakes) {
@@ -387,6 +386,9 @@ const int POLICIES_CORRELATION_ID = 65535;
         _streamingMediaManager.displayCapabilties = registerResponse.displayCapabilities;
     }
     self.protocol.securityManager = [self securityManagerForMake:registerResponse.vehicleType.make];
+    if (self.protocol.securityManager && [self.protocol.securityManager respondsToSelector:@selector(setAppId:)]) {
+        self.protocol.securityManager.appId = self.appId;
+    }
 
     if ([SDLGlobals globals].protocolVersion >= 4) {
         [self sendMobileHMIState];
@@ -414,19 +416,17 @@ const int POLICIES_CORRELATION_ID = 65535;
     [SDLDebugTool logInfo:@"OnSystemRequest (notification)" withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
 
     SDLOnSystemRequest *systemRequest = [[SDLOnSystemRequest alloc] initWithDictionary:[dict mutableCopy]];
-    if (systemRequest != nil) {
-        SDLRequestType *requestType = systemRequest.requestType;
-        
-        // Handle the various OnSystemRequest types
-        if (requestType == [SDLRequestType PROPRIETARY]) {
-            [self handleSystemRequestProprietary:systemRequest];
-        } else if (requestType == [SDLRequestType LOCK_SCREEN_ICON_URL]) {
-            [self handleSystemRequestLockScreenIconURL:systemRequest];
-        } else if (requestType == [SDLRequestType HTTP]) {
-            [self sdl_handleSystemRequestHTTP:systemRequest];
-        } else if (requestType == [SDLRequestType LAUNCH_APP]) {
-            [self sdl_handleSystemRequestLaunchApp:systemRequest];
-        }
+    SDLRequestType *requestType = systemRequest.requestType;
+
+    // Handle the various OnSystemRequest types
+    if (requestType == [SDLRequestType PROPRIETARY]) {
+        [self handleSystemRequestProprietary:systemRequest];
+    } else if (requestType == [SDLRequestType LOCK_SCREEN_ICON_URL]) {
+        [self handleSystemRequestLockScreenIconURL:systemRequest];
+    } else if (requestType == [SDLRequestType HTTP]) {
+        [self sdl_handleSystemRequestHTTP:systemRequest];
+    } else if (requestType == [SDLRequestType LAUNCH_APP]) {
+        [self sdl_handleSystemRequestLaunchApp:systemRequest];
     }
 }
 
@@ -694,11 +694,9 @@ const int POLICIES_CORRELATION_ID = 65535;
 }
 
 - (void)invokeMethodOnDelegates:(SEL)aSelector withObject:(id)object {
-    __weak SDLProxy *weakSelf = self;
-    
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (!_alreadyDestructed){
-            for (id<SDLProxyListener> listener in weakSelf.proxyListeners) {
+        @autoreleasepool {
+            for (id<SDLProxyListener> listener in self.proxyListeners) {
                 if ([listener respondsToSelector:aSelector]) {
                     // HAX: http://stackoverflow.com/questions/7017281/performselector-may-cause-a-leak-because-its-selector-is-unknown
                     ((void (*)(id, SEL, id))[(NSObject *)listener methodForSelector:aSelector])(listener, aSelector, object);
@@ -722,7 +720,7 @@ const int POLICIES_CORRELATION_ID = 65535;
     // Prepare the data in the required format
     NSString *encodedSyncPDataString = [[NSString stringWithFormat:@"%@", encodedSyncPData] componentsSeparatedByString:@"\""][1];
     NSArray *array = [NSArray arrayWithObject:encodedSyncPDataString];
-    NSDictionary *dictionary = @{ @"data" : array };
+    NSDictionary *dictionary = @{ @"data": array };
     NSError *JSONSerializationError = nil;
     NSData *data = [NSJSONSerialization dataWithJSONObject:dictionary options:kNilOptions error:&JSONSerializationError];
     if (JSONSerializationError) {
