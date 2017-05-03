@@ -9,6 +9,7 @@
 #import "SDLNames.h"
 #import "SDLSamplingRate.h"
 #import "SDLTTSChunk.h"
+#import "SDLTTSChunkFactory.h"
 
 
 @implementation SDLPerformAudioPassThru
@@ -25,6 +26,34 @@
     return self;
 }
 
+- (instancetype)initWithInitialPrompt:(NSString *)initialPrompt audioPassThruDisplayText1:(NSString *)audioPassThruDisplayText1 audioPassThruDisplayText2:(NSString *)audioPassThruDisplayText2 samplingRate:(SDLSamplingRate *)samplingRate bitsPerSample:(SDLBitsPerSample *)bitsPerSample audioType:(SDLAudioType *)audioType maxDuration:(UInt32)maxDuration muteAudio:(BOOL)muteAudio {
+    self = [self initWithSamplingRate:samplingRate bitsPerSample:bitsPerSample audioType:audioType maxDuration:maxDuration];
+    if (!self) {
+        return nil;
+    }
+
+    self.initialPrompt = [SDLTTSChunk textChunksFromString:initialPrompt];
+    self.audioPassThruDisplayText1 = audioPassThruDisplayText1;
+    self.audioPassThruDisplayText2 = audioPassThruDisplayText2;
+    self.muteAudio = @(muteAudio);
+
+    return self;
+}
+
+- (instancetype)initWithSamplingRate:(SDLSamplingRate *)samplingRate bitsPerSample:(SDLBitsPerSample *)bitsPerSample audioType:(SDLAudioType *)audioType maxDuration:(UInt32)maxDuration {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.samplingRate = samplingRate;
+    self.bitsPerSample = bitsPerSample;
+    self.audioType = audioType;
+    self.maxDuration = @(maxDuration);
+
+    return self;
+}
+
 - (void)setInitialPrompt:(NSMutableArray *)initialPrompt {
     if (initialPrompt != nil) {
         [parameters setObject:initialPrompt forKey:NAMES_initialPrompt];
@@ -35,7 +64,9 @@
 
 - (NSMutableArray *)initialPrompt {
     NSMutableArray *array = [parameters objectForKey:NAMES_initialPrompt];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLTTSChunk.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLTTSChunk.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

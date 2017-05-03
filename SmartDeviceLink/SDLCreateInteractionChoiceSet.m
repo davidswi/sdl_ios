@@ -21,6 +21,17 @@
     return self;
 }
 
+- (instancetype)initWithId:(UInt32)choiceId choiceSet:(NSArray *)choiceSet {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.interactionChoiceSetID = @(choiceId);
+    self.choiceSet = [choiceSet mutableCopy];
+    return self;
+}
+
 - (void)setInteractionChoiceSetID:(NSNumber *)interactionChoiceSetID {
     if (interactionChoiceSetID != nil) {
         [parameters setObject:interactionChoiceSetID forKey:NAMES_interactionChoiceSetID];
@@ -43,7 +54,9 @@
 
 - (NSMutableArray *)choiceSet {
     NSMutableArray *array = [parameters objectForKey:NAMES_choiceSet];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLChoice.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLChoice.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

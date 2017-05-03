@@ -18,7 +18,7 @@ QuickSpecBegin(SDLProtocolReceivedMessageRouterSpec)
 
 // TODO: This should be rewritten using an actual mock (i.e. SDLProtocolListenerDelegateMock class to avoid OCMock)
 describe(@"HandleReceivedMessage Tests", ^ {
-    context(@"When handling control message", ^ {
+    xcontext(@"When handling control message", ^ {
         it(@"Should route message correctly", ^ {
             id delegateMock = OCMProtocolMock(@protocol(SDLProtocolListener));
             
@@ -38,11 +38,11 @@ describe(@"HandleReceivedMessage Tests", ^ {
             router.delegate = delegateMock;
             [router handleReceivedMessage:testMessage];
             
-            OCMExpect([delegateMock handleProtocolStartSessionACK:testMessage.header]);
+            OCMVerify([delegateMock handleProtocolStartSessionACK:testMessage.header]);
         });
     });
     
-    context(@"When handling single frame message", ^ {
+    xcontext(@"When handling single frame message", ^ {
         it(@"Should route message correctly", ^ {
             id delegateMock = OCMProtocolMock(@protocol(SDLProtocolListener));
             
@@ -67,7 +67,7 @@ describe(@"HandleReceivedMessage Tests", ^ {
                 
                 [invocation getArgument:&message atIndex:2];
                 
-                SDLV2ProtocolMessage* messageReceived = (SDLV2ProtocolMessage*)message;
+                SDLV2ProtocolMessage* messageReceived = (SDLV2ProtocolMessage *)message;
                 
                 expect(messageReceived).to(beIdenticalTo(testMessage));
             }] ignoringNonObjectArgs] onProtocolMessageReceived:[OCMArg any]];
@@ -81,7 +81,7 @@ describe(@"HandleReceivedMessage Tests", ^ {
         });
     });
     
-    context(@"When handling multi-frame message", ^ {
+    xcontext(@"When handling multi-frame message", ^ {
         it(@"Should route message correctly", ^ {
             //Allocate 2000 bytes and use it as test data
             const NSUInteger dataLength = 2000;

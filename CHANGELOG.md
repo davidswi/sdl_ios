@@ -1,3 +1,253 @@
+# 4.5.5 Release Notes
+### Bug Fixes
+* Added a check for if `SDLManager` is already started and prevent starting it again.
+* Prevent infinite loops in IAP transport.
+
+### Example App
+* Fixed incorrectly setting button state on disconnect.
+
+# 4.5.4 Release Notes
+### Bug Fixes
+* Streaming video will not crash if data is unexpectedly NULL.
+* SDL now compiles on Xcode 8.3.
+* Lockscreen will now appear appropriately when it's remote HMI is in the background.
+* Internal state machines now throw more descriptive exceptions.
+
+
+# 4.5.3 Release Notes
+### Bug Fixes
+* `SDLManager`'s `delegate` method `hmiLevel:didChangeToLevel:` now only triggers when the HMI level changes, instead of whenever an `onHMIStatus` is received.
+* Fixed a few crashes in `SDLStreamingMediaManager` for navigation video streaming.
+
+# 4.5.2 Release Notes
+### Bug Fixes
+* Fixed unhandled Register App Interface Response warnings causing the manager to disconnect.
+* Fixed `SDLManager stop` not actually stopping SDL.
+* Fixed `SDLDebugTool` resetting its logs on disconnection.
+* Fixed `SDLManager` auto-reconnection sometimes causing a crash.
+
+### Example Project
+* Connect / Disconnect button appearance fixed.
+
+# 4.5.1 Release Notes
+### Bug Fixes
+* Fixed large file transfers not properly setting their offset.
+* Check for nil before attempting to send an RPC request.
+
+# 4.5.0 Release Notes (Since Beta 2)
+### Bug Fixes
+* Fixed an issue attempting to upload an app icon when the head unit does not support images.
+
+# 4.5.0 Beta 2 Release Notes
+### Bug Fixes
+* Fixed an issue with printing incorrect Frame Data when logging.
+* Fixed an issue with SDLLocationDetails' properties being incorrectly stored.
+* Added in nil-checks for SDLStreamingMediaManager's startSession completionHandlers.
+* Fixed an issue with a SDLPerformInteraction initializer causing an infinite loop.
+* Fixed an issue with uploading a nil SDLFile would cause an infinite loop.
+
+# 4.5.0 Beta 1 Release Notes
+### Bug Fixes
+* Altered how Security libraries get the app id so they can start downloads faster.
+* Fixed a number of RPC initializers to have correct number sizes.
+* Fixed a video session crash in rare instances when the compression session was NULL.
+* Fixed waypoint RPCs missing response and notification dispatchers and incorrect spelling on some classes (the old classes are deprecated).
+
+# 4.4.1 Release Notes
+### Bug Fixes
+* Subscribing to waypoints should now work (new feature & RPC in v4.4.0).
+
+### Other
+* Fixes a few failing tests that were overlooked.
+* `SDLUploadFileOperation`s now use the built-in cancel mechanism instead of its own internal flag.
+
+# 4.4.0 Release Notes
+### Features
+* [SDL-0003] Adds SendLocation and associated data types.
+* [SDL-0004] Adds Waypointing as a feature for Last Mile Navigation.
+* Adds `DisplayType` `Generic`, please continue to not use the `DisplayType` to know when features are available.
+
+### Bug Fixes
+* Fixes the completion handler of a file upload being called twice when a file failed to upload (which fixes a crash in the example project).
+
+### Tests
+* Fixes an issue where tests would fail to compile.
+
+# 4.3.0 Release Notes (Since RC 6 + Highlights)
+### Highlights
+* Adds a lifecycle manager to replace `SDLProxy` and manages much more of the lifecycle based on a declarative `SDLConfiguration`.
+* Adds a file manager to streamline uploading and deleting files.
+* Adds a lock screen manager to streamline lock screens and also provides a customizable default lock screen.
+* Adds a permission manager to streamline knowing when RPCs are available for use.
+* Adds the ability to use blocks to be notified about RPC responses.
+* Adds the ability to use blocks to be notified about certain RPC notifications (such as button presses).
+
+### (Since RC 6)
+### Features
+* Added an `SDLProxy` property to `SDLManager` to allow for edge cases in v4.3. This property will be removed in v5.0.
+
+### Deprecations
+* `SDLRPCRequestFactory` is now deprecated. The methods have been replaced as initialzers on the respective RPC methods. These intiailizers have been improved as well.
+* `SDLTTSChunkFactory` is now deprecated. The methods have been replaced as initialzers on the respective RPC methods.
+
+### Bug Fixes
+* Fixed a bug where a non-existent file could attempt to upload, causing havoc.
+* Fix some test framework stuff related to Xcode 8.
+* No longer crashes when RegisterAppInterfaceResponse errors.
+* RegisterAppInterface no longer crashes when attempting to connect a navigation app to a non-navigation capable head unit.
+
+### Example App
+* The example app now shows some example Permission Manager usage and logs to console a few permission manager observer blocks.
+
+# 4.3.0 Release Candidate 6 Release Notes (Since RC 5)
+### Bug Fixes
+* Fixed several bugs and improved error messaging around what should happen if File Manager fails to start, for example because the head unit does not support files.
+
+# 4.3.0 Release Candidate 5 Release Notes (Since RC 4)
+### Bug Fixes
+* Fixed an issue where "SmartDeviceLink.h" would not be available through cocoapods.
+
+# 4.3.0 Release Candidate 4 Release Notes (Since RC 3)
+### Bug Fixes
+* Notification constants should now be compatible both with Swift 3 and with iOS 6/7.
+* Fixed a few issues with the lock screen and iOS 6/7 support.
+* Fixed a layout issue with the lock screen on iPhone 4S-sized phones.
+
+### Other
+* CI builds now run on Xcode 8.
+* Removed xctest testing framework, now just uses xcodebuild.
+* Explicitly specify which headers are public in Cocoapods spec.
+
+# 4.3.0 Release Candidate 3 Release Notes (Since RC 2)
+### Bug Fixes
+* Fixed a bug where large putfiles would crash.
+
+### Other
+* Updated to base v4.2.4
+
+# 4.3.0 Release Candidate 2 Release Notes (Since RC 1)
+### Bug Fixes
+* Updated project to Xcode 8 settings and turn on additional warnings and analyzer settings.
+* Fixed `SDLConsoleController` not using `NSLocalizedString` macro.
+* Fixed example app declaring a `UIModalPresentationStyle` enum as `UIModalTransitionStyle` causing a build error in Xcode 8.
+* Update testing deps to work with Xcode 8.
+
+### Example App
+* Add iTunes file sharing to the example app to allow for easier file log retrieval.
+
+# 4.3.0 Release Candidate 1 Release Notes (Since Beta 4)
+### Enhancements
+* Removed all usages of NSLog. Now all logs can be turned on or off.
+* SDL logs are now off by default in the default lifecycle configuration, console logs are on by default in the debug lifecycle configuration.
+* SDLLockScreenViewController is now public and may be subclassed and used as a custom view controller. If subclassed, the vehicleIcon property will be set if the remote system sends one.
+
+### Bug Fixes
+* Fixed an issue with dynamic frameworks accessing the default lock screen resources.
+* Fixed a crash relating to an OnAppInterfaceUnregistered notification.
+
+### Example App
+* Fixed initial data being sent multiple times.
+* Fixed CreateInteractionChoiceSet being sent multiple times and sometimes not working.
+* Fixed implementing a delegate method that no longer exists.
+* Fixed UI buttons not updating upon connecting.
+* Added a soft button.
+
+# 4.3.0 Beta 4 Release Notes (Since Beta 3)
+### Enhancements
+* Fix resource bundle not being included via cocoapods, causing a failure on the default lock screen. Also added better failure messages. The resource bundle will still have to be manually added to your app's copy resources build phase.
+* Reduced resource bundle size by optimizing lock screen images.
+* RPC handlers are no longer readonly and can now be set outside of the init.
+* Improved the example app with additional code and features to see how the new dev api works. Stay tuned for a few additional features.
+
+# 4.3.0 Beta 3 Release Notes (Since Beta 2)
+### Breaking Changes
+* `resumeHash` is now a configuration property and is not automatically handled.
+* `SDLFile` and `SDLArtwork` initializers no longer contain "ephemeral", these are renamed to simply start with "file" since they are the default case.
+* `SDLManagerDelegate` no longer has the method `managerDidBecomeReady`. Use the ready block on `start` instead.
+* `SDLManagerDelegate` parameters are now nonnull.
+* `SDLLockScreenConfiguration` `showInOptional` is now `showInOptionalState`.
+* `SDLLifecycleConfiguration` `port` is now a `UInt16` instead of a `NSString`.
+* Many block parameters changed names to be more consistent and descriptive.
+
+### Enhancements
+* The `OnKeyboardInput` RPC notification is now properly included and sent.
+* `SDLLifecycleManager` now only sends the "Ready" notification if registration succeeded.
+* `SDLManagerDelegate` `hmiLevel:didChangeToLevel:` is now sent right after becoming ready with the current HMI level.
+* `SDLLifecycleConfiguration` `ipAddress` is now null_resettable.
+* `SDLLifecycleConfiguration` can now contain security managers which will properly be added to the internal `SDLProxy` as appropriate.
+* `SDLLifecycleConfiguration` now has a `logFlags` parameter which can be set to alter how SDL logs out data or to prevent it from doing so at all.
+* If `RegisterAppInterfaceResponse` returns `WARNINGS` or `RESUME_FAILED` still successfully connect, but set the error properly of the ready block with the relevant information.
+* Added backward compatible `NSNotification` subclasses to more clearly describe what type of object it contains.
+* Documentation enhancements.
+
+### Bug Fixes
+* `SDLFileManager` `deleteRemoteFileWithName:completionHandler:` no longer crashes if no completion handler is set.
+* `SDLFileManager` `uploadRemoteFileWithName:completionHandler:` no longer crashes if no completion handler is set.
+* `SDLFileManager` will more efficiently clean up temporary files.
+* Remove some unneeded methods from `SDLLockScreenViewController`.
+* Properly send `AppHMIType` and `TTSName` set in `SDLLifecycleConfiguration` to the `RegisterAppInterface`.
+* Strong / weak dance bugs fixed.
+* Unit test fixes.
+
+### Internal enhancements
+* `SDLStateMachine` now has some public keys to help accessing data internally.
+* `SDLResponseDispatcher` updates: fixing a method name, fixing an enum equality check, clarity updates.
+* `SDLLifecycleManager` remove `stateTransitionNotificationName`.
+* Some `NSOperation` subclass code was shifted to an intermediate superclass.
+* Fixed some instance variables not having generics.
+* Updated code to match v4.2.3.
+
+# 4.3.0 Beta 2 Release Notes (Since Beta 1)
+### Enhancements
+* Starting up `SDLManager` now requires a block which will pass back an error if it failed.
+* `SDLManager` now provides a method to call in `AppDelegate applicationWillTerminate:` that will prevent killed apps from being unable to re-register.
+
+### Bug Fixes
+* Fixed a memory leak caused by the strong / weak block dance.
+
+### Other
+* Currently removed automatic resumption. Resumption will return in a future build as a manual configuration pass in.
+
+# 4.3.0 Beta 1 Release Notes (Since Alpha 1)
+### Breaking Changes
+* State machine transition names are no longer public to allow for behind the scenes changes without minor or major version changes.
+
+### Enhancements
+* SDLFile, if initialized with NSData, will no longer write that data to disk, instead, it is stored in RAM. SDLFiles initialized with a file URL will continue to keep that data on disk until needed.
+* The default lock screen text is now localized into Spanish, French, German, Japenese, and Chinese.
+
+### Bug Fixes
+* If the lifecycle manager or any of its consituent managers fail to start, the lifecycle manager will disconnect or unregister and an error will be logged.
+* SDLLockScreenManager should use less RAM.
+* Fixed test failures.
+
+# 4.3.0 Alpha 1 Release Notes
+### Deprecations
+* Deprecate SDLProxy in favor of SDLManager. A future major release will remove and alter many public APIs, but they will not be deprecated in this release because they will not be replaced in this release.
+
+### Enhancements
+* Release a whole new way of reasoning about interacting with SDL. This new high-level API, and it is largely modular with "managers" for various aspects of SDL. This will be extended as time goes on with various new managers based on aspects of SDL and app development (#223, #241, #298). @joeljfischer, @adein, @justinjdickow, @asm09fsu
+  * Add a new set of configurations that will be set before startup and allows the manager to take care of quite a bit of setup boilerplate on its own.
+  * Release a Permission Manager that allows a developer to check which SDL RPCs are avaiable to use and monitor the ability to use them.
+  * Release a File Manager that abstracts the process of tracking files on the remote head unit, uploading, and deleting files.
+  * Release a Lock Screen Manager that tracks appropriate times to show a lock screen and comes with a default lock screen view controller that allows for some customizability.
+  * All RPCs sent through the primary manager (SDLManager) are tracked and can have a block called with the request and response when the response is returned from the remote head unit.
+  * All RPCs sent will have their correlation ids managed by the SDL library.
+  * Particular RPCs can now have an additional block used with them that can be called under certain conditions. For example, RPCs that create buttons (such as soft buttons) can have a block handler that will be called when an event occurs on the button.
+  * Underlying the new high-level API are a few dispatchers, particularly the Notification Dispatcher which sends many notifications when new RPC notifications and responses are sent from the remote head unit. This may be used by the developer now, but will become less useful as more managers are released.
+
+# 4.2.4 Release Notes
+### Bug Fixes
+* Fixed Touch Manager not always firing single touches.
+
+### Other
+* Updated testing frameworks to support Xcode 8.
+* Updated example app to support Xcode 8.
+
+# 4.2.3 Release Notes
+### Bug Fixes
+* Fixed HTTPS URL schemes not properly uploading data (#432, #438).
+
 # 4.2.2 Release Notes
 ### Bug Fixes
 * Fixed HTTP URL schemes not being properly altered to HTTPS to account for App Transport Security (#432, #436).

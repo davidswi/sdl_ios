@@ -23,6 +23,27 @@
     return self;
 }
 
+- (instancetype)initWithNavigationText1:(NSString *)navigationText1 navigationText2:(NSString *)navigationText2 eta:(NSString *)eta timeToDestination:(NSString *)timeToDestination totalDistance:(NSString *)totalDistance turnIcon:(SDLImage *)turnIcon nextTurnIcon:(SDLImage *)nextTurnIcon distanceToManeuver:(double)distanceToManeuver distanceToManeuverScale:(double)distanceToManeuverScale maneuverComplete:(BOOL)maneuverComplete softButtons:(NSArray<SDLSoftButton *> *)softButtons {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.navigationText1 = navigationText1;
+    self.navigationText2 = navigationText2;
+    self.eta = eta;
+    self.timeToDestination = timeToDestination;
+    self.totalDistance = totalDistance;
+    self.turnIcon = turnIcon;
+    self.nextTurnIcon = nextTurnIcon;
+    self.distanceToManeuver = @(distanceToManeuver);
+    self.distanceToManeuverScale = @(distanceToManeuverScale);
+    self.maneuverComplete = @(maneuverComplete);
+    self.softButtons = [softButtons mutableCopy];
+
+    return self;
+}
+
 - (void)setNavigationText1:(NSString *)navigationText1 {
     if (navigationText1 != nil) {
         [parameters setObject:navigationText1 forKey:NAMES_navigationText1];
@@ -163,7 +184,9 @@
 
 - (NSMutableArray *)softButtons {
     NSMutableArray *array = [parameters objectForKey:NAMES_softButtons];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLSoftButton.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLSoftButton.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

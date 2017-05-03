@@ -22,6 +22,18 @@
     return self;
 }
 
+- (instancetype)initWithTurnList:(NSArray<SDLTurn *> *)turnList softButtons:(NSArray<SDLSoftButton *> *)softButtons {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.turnList = [turnList mutableCopy];
+    self.softButtons = [softButtons mutableCopy];
+
+    return self;
+}
+
 - (void)setTurnList:(NSMutableArray *)turnList {
     if (turnList != nil) {
         [parameters setObject:turnList forKey:NAMES_turnList];
@@ -32,7 +44,9 @@
 
 - (NSMutableArray *)turnList {
     NSMutableArray *array = [parameters objectForKey:NAMES_turnList];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLTurn.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLTurn.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];
@@ -53,7 +67,9 @@
 
 - (NSMutableArray *)softButtons {
     NSMutableArray *array = [parameters objectForKey:NAMES_softButtons];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLSoftButton.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLSoftButton.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

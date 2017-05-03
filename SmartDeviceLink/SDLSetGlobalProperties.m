@@ -8,7 +8,8 @@
 #import "SDLKeyboardProperties.h"
 #import "SDLNames.h"
 #import "SDLTTSChunk.h"
-#import "SDLVRHelpItem.h"
+#import "SDLTTSChunkFactory.h"
+#import "SDLVrHelpItem.h"
 
 
 @implementation SDLSetGlobalProperties
@@ -25,6 +26,32 @@
     return self;
 }
 
+- (instancetype)initWithHelpText:(NSString *)helpText timeoutText:(NSString *)timeoutText {
+    return [self initWithHelpText:helpText timeoutText:timeoutText vrHelpTitle:nil vrHelp:nil];
+}
+
+- (instancetype)initWithHelpText:(NSString *)helpText timeoutText:(NSString *)timeoutText vrHelpTitle:(NSString *)vrHelpTitle vrHelp:(NSArray *)vrHelp {
+    return [self initWithHelpText:helpText timeoutText:timeoutText vrHelpTitle:vrHelpTitle vrHelp:vrHelp menuTitle:nil menuIcon:nil keyboardProperties:nil];
+}
+
+- (instancetype)initWithHelpText:(NSString *)helpText timeoutText:(NSString *)timeoutText vrHelpTitle:(NSString *)vrHelpTitle vrHelp:(NSArray *)vrHelp menuTitle:(NSString *)menuTitle menuIcon:(SDLImage *)menuIcon keyboardProperties:(SDLKeyboardProperties *)keyboardProperties {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.helpPrompt = [SDLTTSChunk textChunksFromString:helpText];
+    self.timeoutPrompt = [SDLTTSChunk textChunksFromString:timeoutText];
+    self.vrHelpTitle = vrHelpTitle;
+    self.vrHelp = [vrHelp mutableCopy];
+    self.menuTitle = menuTitle;
+    self.menuIcon = menuIcon;
+    self.keyboardProperties = keyboardProperties;
+
+    return self;
+}
+
+
 - (void)setHelpPrompt:(NSMutableArray *)helpPrompt {
     if (helpPrompt != nil) {
         [parameters setObject:helpPrompt forKey:NAMES_helpPrompt];
@@ -35,7 +62,9 @@
 
 - (NSMutableArray *)helpPrompt {
     NSMutableArray *array = [parameters objectForKey:NAMES_helpPrompt];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLTTSChunk.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLTTSChunk.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];
@@ -56,7 +85,9 @@
 
 - (NSMutableArray *)timeoutPrompt {
     NSMutableArray *array = [parameters objectForKey:NAMES_timeoutPrompt];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLTTSChunk.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLTTSChunk.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];
@@ -89,7 +120,9 @@
 
 - (NSMutableArray *)vrHelp {
     NSMutableArray *array = [parameters objectForKey:NAMES_vrHelp];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLVRHelpItem.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLVRHelpItem.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

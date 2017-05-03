@@ -21,6 +21,29 @@
     return self;
 }
 
+- (instancetype)initWithMessage:(NSString *)message timeout:(UInt16)timeout softButtons:(NSArray<SDLSoftButton *> *)softButtons {
+    self = [self initWithMessage:message];
+    if (!self) {
+        return nil;
+    }
+
+    self.timeout = @(timeout);
+    self.softButtons = [softButtons mutableCopy];
+
+    return self;
+}
+
+- (instancetype)initWithMessage:(NSString *)message {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.scrollableMessageBody = message;
+
+    return self;
+}
+
 - (void)setScrollableMessageBody:(NSString *)scrollableMessageBody {
     if (scrollableMessageBody != nil) {
         [parameters setObject:scrollableMessageBody forKey:NAMES_scrollableMessageBody];
@@ -55,7 +78,9 @@
 
 - (NSMutableArray *)softButtons {
     NSMutableArray *array = [parameters objectForKey:NAMES_softButtons];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLSoftButton.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLSoftButton.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

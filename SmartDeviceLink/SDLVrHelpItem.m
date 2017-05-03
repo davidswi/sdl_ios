@@ -2,7 +2,7 @@
 //
 
 
-#import "SDLVRHelpItem.h"
+#import "SDLVrHelpItem.h"
 
 #import "SDLImage.h"
 #import "SDLNames.h"
@@ -18,6 +18,29 @@
 - (instancetype)initWithDictionary:(NSMutableDictionary *)dict {
     if (self = [super initWithDictionary:dict]) {
     }
+    return self;
+}
+
+- (instancetype)initWithText:(NSString *)text image:(SDLImage *)image position:(UInt8)position {
+    self = [self initWithText:text image:image];
+    if (!self) {
+        return nil;
+    }
+
+    self.position = @(position);
+
+    return self;
+}
+
+- (instancetype)initWithText:(NSString *)text image:(SDLImage *)image {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.text = text;
+    self.image = image;
+
     return self;
 }
 

@@ -6,6 +6,7 @@
 
 #import "SDLNames.h"
 #import "SDLTTSChunk.h"
+#import "SDLTTSChunkFactory.h"
 
 @implementation SDLSpeak
 
@@ -21,6 +22,22 @@
     return self;
 }
 
+- (instancetype)initWithTTS:(NSString *)ttsText {
+    NSMutableArray *ttsChunks = [SDLTTSChunk textChunksFromString:ttsText];
+    return [self initWithTTSChunks:ttsChunks];
+}
+
+- (instancetype)initWithTTSChunks:(NSArray<SDLTTSChunk *> *)ttsChunks {
+    self = [self init];
+    if (!self) {
+        return nil;
+    }
+
+    self.ttsChunks = [ttsChunks mutableCopy];
+
+    return self;
+}
+
 - (void)setTtsChunks:(NSMutableArray *)ttsChunks {
     if (ttsChunks != nil) {
         [parameters setObject:ttsChunks forKey:NAMES_ttsChunks];
@@ -31,7 +48,9 @@
 
 - (NSMutableArray *)ttsChunks {
     NSMutableArray *array = [parameters objectForKey:NAMES_ttsChunks];
-    if ([array count] < 1 || [[array objectAtIndex:0] isKindOfClass:SDLTTSChunk.class]) {
+    if ([array isEqual:[NSNull null]]) {
+        return [NSMutableArray array];
+    } else if (array.count < 1 || [array.firstObject isKindOfClass:SDLTTSChunk.class]) {
         return array;
     } else {
         NSMutableArray *newList = [NSMutableArray arrayWithCapacity:[array count]];

@@ -1,5 +1,5 @@
 //
-//  SDLHexUtilitySpec.m
+//  SDLLockScreenStatusManagerSpec
 //  SmartDeviceLink-iOS
 
 #import <Quick/Quick.h>
@@ -7,16 +7,16 @@
 
 #import "SDLHMILevel.h"
 #import "SDLOnLockScreenStatus.h"
-#import "SDLLockScreenManager.h"
+#import "SDLLockScreenStatusManager.h"
 #import "SDLLockScreenStatus.h"
 
 
-QuickSpecBegin(SDLLockScreenManagerSpec)
+QuickSpecBegin(SDLLockScreenStatusManagerSpec)
 
-describe(@"the lockscreen manager", ^{
-    __block SDLLockScreenManager *lockScreenManager;
+describe(@"the lockscreen status manager", ^{
+    __block SDLLockScreenStatusManager *lockScreenManager;
     beforeEach(^{
-        lockScreenManager = [[SDLLockScreenManager alloc] init];
+        lockScreenManager = [[SDLLockScreenStatusManager alloc] init];
     });
     
     it(@"should properly initialize user selected app boolean to false", ^{
@@ -122,9 +122,31 @@ describe(@"the lockscreen manager", ^{
                 beforeEach(^{
                     lockScreenManager.userSelected = YES;
                 });
-                
-                it(@"should return lock screen required", ^{
-                    expect(lockScreenManager.lockScreenStatus).to(equal([SDLLockScreenStatus REQUIRED]));
+
+                context(@"if we do not set the driver distraction state", ^{
+                    it(@"should return lock screen required", ^{
+                        expect(lockScreenManager.lockScreenStatus).to(equal([SDLLockScreenStatus REQUIRED]));
+                    });
+                });
+
+                context(@"if we set the driver distraction state to false", ^{
+                    beforeEach(^{
+                        lockScreenManager.driverDistracted = NO;
+                    });
+
+                    it(@"should return lock screen optional", ^{
+                        expect(lockScreenManager.lockScreenStatus).to(equal([SDLLockScreenStatus OPTIONAL]));
+                    });
+                });
+
+                context(@"if we set the driver distraction state to true", ^{
+                    beforeEach(^{
+                        lockScreenManager.driverDistracted = YES;
+                    });
+
+                    it(@"should return lock screen required", ^{
+                        expect(lockScreenManager.lockScreenStatus).to(equal([SDLLockScreenStatus REQUIRED]));
+                    });
                 });
             });
             
