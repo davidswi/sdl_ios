@@ -127,10 +127,8 @@ const int POLICIES_CORRELATION_ID = 65535;
 }
 
 - (void)notifyProxyClosed {
-    if (_isConnected) {
-        _isConnected = NO;
-        [self invokeMethodOnDelegates:@selector(onProxyClosed) withObject:nil];
-    }
+    _isConnected = NO;
+    [self invokeMethodOnDelegates:@selector(onProxyClosed) withObject:nil];
 }
 
 

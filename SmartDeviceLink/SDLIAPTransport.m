@@ -219,6 +219,7 @@ int const streamOpenTimeoutSeconds = 2;
         // We are beyond the number of retries allowed
         [SDLDebugTool logInfo:@"Create session retries exhausted."];
         self.sessionSetupInProgress = NO;
+        [self.delegate onTransportDisconnected];
     }
 }
 
@@ -373,6 +374,7 @@ int const streamOpenTimeoutSeconds = 2;
         // Read in the stream a single byte at a time
         uint8_t buf[1];
         NSUInteger len = [istream read:buf maxLength:1];
+        len = 0;
         if (len > 0) {
             NSString *logMessage = [NSString stringWithFormat:@"Switching to protocol %@", [@(buf[0]) stringValue]];
             [SDLDebugTool logInfo:logMessage];
