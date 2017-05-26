@@ -23,7 +23,7 @@ NSString *const controlProtocolString = @"com.smartdevicelink.prot0";
 NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 NSString *const backgroundTaskName = @"com.sdl.transport.iap.connectloop";
 
-int const createSessionRetries = 5;
+int const createSessionRetries = 1;
 int const protocolIndexTimeoutSeconds = 20;
 int const streamOpenTimeoutSeconds = 2;
 
