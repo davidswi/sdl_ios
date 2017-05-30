@@ -24,7 +24,6 @@ NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 NSString *const backgroundTaskName = @"com.sdl.transport.iap.connectloop";
 
 int const createSessionRetries = 1;
-int const protocolIndexTimeoutSeconds = 600;
 int const streamOpenTimeoutSeconds = 2;
 
 
@@ -35,7 +34,6 @@ int const streamOpenTimeoutSeconds = 2;
 @property (assign) int retryCounter;
 @property (assign) BOOL isDelayedConnect;
 @property (assign, nonatomic) BOOL sessionSetupInProgress;
-@property (strong) SDLTimer *protocolIndexTimer;
 @property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTaskId;
 
 @end
@@ -51,7 +49,6 @@ int const streamOpenTimeoutSeconds = 2;
         _retryCounter = 0;
         _isDelayedConnect = NO;
         _sessionSetupInProgress = NO;
-        _protocolIndexTimer = nil;
         _backgroundTaskId = UIBackgroundTaskInvalid;
 
         [self sdl_startEventListening];
@@ -142,7 +139,6 @@ int const streamOpenTimeoutSeconds = 2;
     }
 
     if (self.sessionSetupInProgress) {
-        [self.protocolIndexTimer cancel];
     	self.sessionSetupInProgress = NO;
     }
     [self disconnect];
@@ -238,24 +234,6 @@ int const streamOpenTimeoutSeconds = 2;
     if (self.controlSession) {
         self.controlSession.delegate = self;
 
-        if (self.protocolIndexTimer == nil) {
-            self.protocolIndexTimer = [[SDLTimer alloc] initWithDuration:protocolIndexTimeoutSeconds repeat:NO];
-        } else {
-            [self.protocolIndexTimer cancel];
-        }
-
-        __weak typeof(self) weakSelf = self;
-        void (^elapsedBlock)(void) = ^{
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-
-            [SDLDebugTool logInfo:@"Protocol Index Timeout"];
-            [strongSelf.controlSession stop];
-            strongSelf.controlSession.streamDelegate = nil;
-            strongSelf.controlSession = nil;
-            [strongSelf sdl_retryEstablishSession];
-        };
-        self.protocolIndexTimer.elapsedBlock = elapsedBlock;
-
         SDLStreamDelegate *controlStreamDelegate = [SDLStreamDelegate new];
         self.controlSession.streamDelegate = controlStreamDelegate;
         controlStreamDelegate.streamHasBytesHandler = [self sdl_controlStreamHasBytesHandlerForAccessory:accessory];
@@ -315,7 +293,6 @@ int const streamOpenTimeoutSeconds = 2;
     // Control Session Opened
     if ([controlProtocolString isEqualToString:session.protocol]) {
         [SDLDebugTool logInfo:@"Control Session Established"];
-        [self.protocolIndexTimer start];
     }
 
     // Data Session Opened
@@ -361,7 +338,6 @@ int const streamOpenTimeoutSeconds = 2;
 
         // End events come in pairs, only perform this once per set.
         if (strongSelf.controlSession != nil) {
-            [strongSelf.protocolIndexTimer cancel];
             [strongSelf.controlSession stop];
             strongSelf.controlSession.streamDelegate = nil;
             strongSelf.controlSession = nil;
@@ -386,7 +362,6 @@ int const streamOpenTimeoutSeconds = 2;
             [SDLDebugTool logInfo:logMessage];
 
             // Destroy the control session
-            [strongSelf.protocolIndexTimer cancel];
             dispatch_sync(dispatch_get_main_queue(), ^{
                 [strongSelf.controlSession stop];
                 strongSelf.controlSession.streamDelegate = nil;
@@ -411,7 +386,6 @@ int const streamOpenTimeoutSeconds = 2;
         __strong typeof(weakSelf) strongSelf = weakSelf;
 
         [SDLDebugTool logInfo:@"Stream Error"];
-        [strongSelf.protocolIndexTimer cancel];
         [strongSelf.controlSession stop];
         strongSelf.controlSession.streamDelegate = nil;
         strongSelf.controlSession = nil;
@@ -530,7 +504,6 @@ int const streamOpenTimeoutSeconds = 2;
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;
-        self.protocolIndexTimer = nil;
         [self sdl_backgroundTaskEnd];
     }
 }
