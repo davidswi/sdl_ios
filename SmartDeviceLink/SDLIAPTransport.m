@@ -23,8 +23,8 @@ NSString *const controlProtocolString = @"com.smartdevicelink.prot0";
 NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 NSString *const backgroundTaskName = @"com.sdl.transport.iap.connectloop";
 
-int const createSessionRetries = 5;
-int const protocolIndexTimeoutSeconds = 20;
+int const createSessionRetries = 1;
+int const protocolIndexTimeoutSeconds = 600;
 int const streamOpenTimeoutSeconds = 2;
 
 
@@ -34,7 +34,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 @property (assign) int retryCounter;
 @property (assign) BOOL isDelayedConnect;
-@property (assign) BOOL sessionSetupInProgress;
+@property (assign, nonatomic) BOOL sessionSetupInProgress;
 @property (strong) SDLTimer *protocolIndexTimer;
 @property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTaskId;
 
@@ -92,6 +92,16 @@ int const streamOpenTimeoutSeconds = 2;
     [[EAAccessoryManager sharedAccessoryManager] unregisterForLocalNotifications];
 }
 
+#pragma mark session setup getter/setter
+
+- (void)setSessionSetupInProgress:(BOOL)inProgress{
+    _sessionSetupInProgress = inProgress;
+    if (!inProgress){
+        // End the background task here to catch all cases
+        [self sdl_backgroundTaskEnd];
+    }
+}
+
 - (void)sdl_backgroundTaskStart {
     if (self.backgroundTaskId != UIBackgroundTaskInvalid) {
         return;
@@ -135,7 +145,6 @@ int const streamOpenTimeoutSeconds = 2;
         [self.protocolIndexTimer cancel];
     	self.sessionSetupInProgress = NO;
     }
-    [self sdl_backgroundTaskEnd];
     [self disconnect];
     [self.delegate onTransportDisconnected];
 }
@@ -312,7 +321,6 @@ int const streamOpenTimeoutSeconds = 2;
     // Data Session Opened
     if (![controlProtocolString isEqualToString:session.protocol]) {
         self.sessionSetupInProgress = NO;
-        [self sdl_backgroundTaskEnd];
         [SDLDebugTool logInfo:@"Data Session Established"];
         [self.delegate onTransportConnected];
     }
