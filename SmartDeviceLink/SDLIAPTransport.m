@@ -294,9 +294,8 @@ int const streamOpenTimeoutSeconds = 2;
     if ([controlProtocolString isEqualToString:session.protocol]) {
         [SDLDebugTool logInfo:@"Control Session Established"];
     }
-
-    // Data Session Opened
-    if (![controlProtocolString isEqualToString:session.protocol]) {
+    else {
+        // Data session established
         self.sessionSetupInProgress = NO;
         [SDLDebugTool logInfo:@"Data Session Established"];
         [self.delegate onTransportConnected];
