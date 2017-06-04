@@ -25,8 +25,6 @@ NSString *const backgroundTaskName = @"com.sdl.transport.iap.connectloop";
 
 int const createSessionRetries = 1;
 int const protocolIndexTimeoutSeconds = 20;
-int const streamOpenTimeoutSeconds = 2;
-
 
 @interface SDLIAPTransport () {
     BOOL _alreadyDestructed;
@@ -142,14 +140,13 @@ int const streamOpenTimeoutSeconds = 2;
         [self.protocolIndexTimer cancel];
     	self.sessionSetupInProgress = NO;
     }
-    [self sdl_backgroundTaskEnd];
     [self disconnect];
     [self.delegate onTransportDisconnected];
 }
 
 - (void)sdl_applicationWillEnterForeground:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"App Foregrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    [self sdl_backgroundTaskEnd];
+    self.sessionSetupInProgress = NO;
     self.retryCounter = 0;
     [self sdl_connect:nil];
 }
@@ -319,7 +316,6 @@ int const streamOpenTimeoutSeconds = 2;
     // Data Session Opened
     if (![controlProtocolString isEqualToString:session.protocol]) {
         self.sessionSetupInProgress = NO;
-        [self sdl_backgroundTaskEnd];
         [SDLDebugTool logInfo:@"Data Session Established"];
         [self.delegate onTransportConnected];
     }
@@ -530,7 +526,7 @@ int const streamOpenTimeoutSeconds = 2;
         self.session = nil;
         self.delegate = nil;
         self.protocolIndexTimer = nil;
-        [self sdl_backgroundTaskEnd];
+        self.sessionSetupInProgress = NO;
     }
 }
 
