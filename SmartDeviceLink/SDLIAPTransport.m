@@ -34,7 +34,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 @property (assign) int retryCounter;
 @property (assign) BOOL isDelayedConnect;
-@property (assign) BOOL sessionSetupInProgress;
+@property (nonatomic, assign) BOOL sessionSetupInProgress;
 @property (strong) SDLTimer *protocolIndexTimer;
 @property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTaskId;
 
@@ -106,6 +106,13 @@ int const streamOpenTimeoutSeconds = 2;
     if (self.backgroundTaskId != UIBackgroundTaskInvalid) {
         [[UIApplication sharedApplication] endBackgroundTask:self.backgroundTaskId];
         self.backgroundTaskId = UIBackgroundTaskInvalid;
+    }
+}
+
+- (void)setSessionSetupInProgress:(BOOL)sessionSetupInProgress{
+    _sessionSetupInProgress = sessionSetupInProgress;
+    if (!sessionSetupInProgress){
+        [self sdl_backgroundTaskEnd];
     }
 }
 
