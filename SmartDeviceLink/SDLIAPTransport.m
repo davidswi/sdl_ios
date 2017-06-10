@@ -24,8 +24,8 @@ NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 NSString *const backgroundTaskName = @"com.sdl.transport.iap.connectloop";
 
 int const createSessionRetries = 1;
-int const streamOpenTimeoutSeconds = 2;
 
+// #define NO_DELAY
 
 @interface SDLIAPTransport () {
     BOOL _alreadyDestructed;
@@ -97,6 +97,10 @@ int const streamOpenTimeoutSeconds = 2;
         // End the background task here to catch all cases
         [self sdl_backgroundTaskEnd];
     }
+    else{
+        // Start the background task here to catch all cases
+        [self sdl_backgroundTaskStart];
+    }
 }
 
 - (void)sdl_backgroundTaskStart {
@@ -122,7 +126,6 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_accessoryConnected:(NSNotification *)notification {
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
-    [self sdl_backgroundTaskStart];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
 
     self.retryCounter = 0;
@@ -203,7 +206,6 @@ int const streamOpenTimeoutSeconds = 2;
     [SDLDebugTool logInfo:@"Attempting To Connect"];
     if (self.retryCounter < createSessionRetries) {
         // We should be attempting to connect
-        self.retryCounter++;
         EAAccessory *sdlAccessory = accessory;
         if (sdlAccessory != nil && [self sdl_tryConnectAccessory:sdlAccessory]){
             // Connection underway, exit
@@ -211,8 +213,10 @@ int const streamOpenTimeoutSeconds = 2;
         } else {
             // Determine if we can start a multi-app session or a legacy (single-app) session
             if ((sdlAccessory = [EAAccessoryManager findAccessoryForProtocol:controlProtocolString])) {
+                self.retryCounter++;
                 [self sdl_createIAPControlSessionWithAccessory:sdlAccessory];
             } else if ((sdlAccessory = [EAAccessoryManager findAccessoryForProtocol:legacyProtocolString])) {
+                self.retryCounter++;
                 [self sdl_createIAPDataSessionWithAccessory:sdlAccessory forProtocol:legacyProtocolString];
             } else {
                 // No compatible accessory
@@ -242,7 +246,6 @@ int const streamOpenTimeoutSeconds = 2;
 
         if (![self.controlSession start]) {
             [SDLDebugTool logInfo:@"Control Session Failed"];
-            self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
             [self sdl_retryEstablishSession];
         }
@@ -266,7 +269,6 @@ int const streamOpenTimeoutSeconds = 2;
 
         if (![self.session start]) {
             [SDLDebugTool logInfo:@"Data Session Failed"];
-            self.session.streamDelegate = nil;
             self.session = nil;
             [self sdl_retryEstablishSession];
         }
@@ -281,7 +283,6 @@ int const streamOpenTimeoutSeconds = 2;
     self.sessionSetupInProgress = NO;
     if (self.session != nil){
         [self.session stop];
-        self.session.delegate = nil;
         self.session = nil;
     }
     // No accessory to use this time, search connected accessories
@@ -309,7 +310,8 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)onSessionStreamsEnded:(SDLIAPSession *)session {
     if (!self.session && [controlProtocolString isEqualToString:session.protocol]) {
         [SDLDebugTool logInfo:@"onSessionStreamsEnded"];
-        [session stop];
+        [self.controlSession stop];
+        self.controlSession = nil;
         [self sdl_retryEstablishSession];
     }
 }
@@ -338,7 +340,6 @@ int const streamOpenTimeoutSeconds = 2;
         // End events come in pairs, only perform this once per set.
         if (strongSelf.controlSession != nil) {
             [strongSelf.controlSession stop];
-            strongSelf.controlSession.streamDelegate = nil;
             strongSelf.controlSession = nil;
             [strongSelf sdl_retryEstablishSession];
         }
@@ -363,7 +364,6 @@ int const streamOpenTimeoutSeconds = 2;
             // Destroy the control session
             dispatch_sync(dispatch_get_main_queue(), ^{
                 [strongSelf.controlSession stop];
-                strongSelf.controlSession.streamDelegate = nil;
                 strongSelf.controlSession = nil;
             });
 
@@ -386,7 +386,6 @@ int const streamOpenTimeoutSeconds = 2;
 
         [SDLDebugTool logInfo:@"Stream Error"];
         [strongSelf.controlSession stop];
-        strongSelf.controlSession.streamDelegate = nil;
         strongSelf.controlSession = nil;
         [strongSelf sdl_retryEstablishSession];
     };
@@ -403,12 +402,11 @@ int const streamOpenTimeoutSeconds = 2;
 
         [SDLDebugTool logInfo:@"Data Stream Event End"];
         [strongSelf.session stop];
+        strongSelf.session = nil;
 
         if (![legacyProtocolString isEqualToString:strongSelf.session.protocol]) {
             [strongSelf sdl_retryEstablishSession];
         }
-
-        strongSelf.session = nil;
     };
 }
 
@@ -440,22 +438,20 @@ int const streamOpenTimeoutSeconds = 2;
 
         [SDLDebugTool logInfo:@"Data Stream Error"];
         [strongSelf.session stop];
-        strongSelf.session.streamDelegate = nil;
-
+        strongSelf.session = nil;
         if (![legacyProtocolString isEqualToString:strongSelf.session.protocol]) {
             [strongSelf sdl_retryEstablishSession];
         }
-
-        strongSelf.session = nil;
     };
 }
 
 - (double)retryDelay {
+    static double delay = 0;
+    
+#ifndef NO_DELAY
     const double min_value = 0.0;
     const double max_value = 10.0;
     double range_length = max_value - min_value;
-
-    static double delay = 0;
 
     // HAX: This pull the app name and hashes it in an attempt to provide a more even distribution of retry delays. The evidence that this does so is anecdotal. A more ideal solution would be to use a list of known, installed SDL apps on the phone to try and deterministically generate an even delay.
     if (delay == 0) {
@@ -484,6 +480,7 @@ int const streamOpenTimeoutSeconds = 2;
         // Transform the number into a number between min and max
         delay = ((range_length * hashBasedValueInRange0to1) + min_value);
     }
+#endif // NO_DELAY
 
     return delay;
 }

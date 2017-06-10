@@ -171,7 +171,7 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
             
             [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode
                                      beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25f]];
-        } while (![NSThread currentThread].cancelled);
+        } while (!self.ioStreamThread.cancelled);
 
         NSLog(@"closing accessory session");
 
