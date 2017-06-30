@@ -490,6 +490,11 @@ int const streamOpenTimeoutSeconds = 2;
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
         _alreadyDestructed = YES;
+        if (self.controlSession){
+            [self.controlSession.streamDelegate clearHandlers];
+            self.controlSession.streamDelegate = nil;
+            [self.controlSession stop];
+        }
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;
