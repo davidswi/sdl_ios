@@ -172,7 +172,7 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
             }
             // The principle here is to give the event loop enough time to process stream events while also allowing it to handle new enqueued data buffers in a timely manner. We're capping the run loop CPU time at 0.25s maximum before it will return control to the rest of the loop.
             [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25f]];
-        } while (!self.ioStreamThread.cancelled);
+        } while (![NSThread currentThread].cancelled);
 
         [SDLDebugTool logInfo:@"closing accessory session"];
 
