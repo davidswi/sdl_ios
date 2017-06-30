@@ -21,6 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 #define NOTIFICATION_TYPEDEF NSNotificationName
 #endif
 
+#if !defined(NSNotificationName)
+typedef NSString * NSNotificationName;
+#endif
+
 typedef NOTIFICATION_TYPEDEF SDLNotificationName;
 
 typedef NSString *SDLNotificationUserInfoKey;
