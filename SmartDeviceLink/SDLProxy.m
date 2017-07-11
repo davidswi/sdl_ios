@@ -78,6 +78,8 @@ const int POLICIES_CORRELATION_ID = 65535;
         _transport.delegate = protocol;
         [_protocol.protocolDelegateTable addObject:self];
         _protocol.transport = transport;
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sdl_onApplicationWillTerminate) name:UIApplicationWillTerminateNotification object:nil];
 
         [self.transport connect];
 
@@ -104,6 +106,10 @@ const int POLICIES_CORRELATION_ID = 65535;
         _streamingMediaManager = nil;
         _displayCapabilities = nil;
     }
+}
+
+- (void)sdl_onApplicationWillTerminate {
+    [self dispose];
 }
 
 - (void)dispose {
