@@ -144,10 +144,12 @@ int const streamOpenTimeoutSeconds = 2;
     if (self.controlSession) {
         self.controlSession.streamDelegate = nil;
         [self.controlSession stop];
+        self.controlSession = nil;
     }
     if (self.session != nil) {
         self.session.streamDelegate = nil;
         [self.session stop];
+        self.session = nil;
     }
 }
 
