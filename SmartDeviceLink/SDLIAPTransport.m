@@ -428,9 +428,10 @@ int const streamOpenTimeoutSeconds = 2;
         __strong typeof(weakSelf) strongSelf = weakSelf;
 
         [SDLDebugTool logInfo:@"Data Stream Error"];
-        [strongSelf.session stop];
-        strongSelf.session.streamDelegate = nil;
-
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [strongSelf.session stop];
+            strongSelf.session.streamDelegate = nil;
+        });
         if (![legacyProtocolString isEqualToString:strongSelf.session.protocol]) {
             [strongSelf sdl_retryEstablishSession];
         }
