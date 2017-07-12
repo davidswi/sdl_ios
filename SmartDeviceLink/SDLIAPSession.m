@@ -86,7 +86,7 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
 - (void)stop {
     if (self.isDataSession) {
         [self.ioStreamThread cancel];
-
+        // Wait for the canceled semaphore
         long lWait = dispatch_semaphore_wait(self.canceledSemaphore, dispatch_time(DISPATCH_TIME_NOW, streamThreadWaitSecs * NSEC_PER_SEC));
         if (lWait == 0) {
             [SDLDebugTool logInfo:@"Stream thread canceled"];
