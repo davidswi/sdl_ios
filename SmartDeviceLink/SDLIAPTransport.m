@@ -142,13 +142,13 @@ int const streamOpenTimeoutSeconds = 2;
     // we unregister for accessory local notifications
     [self sdl_stopEventListening];
     if (self.controlSession) {
-        self.controlSession.streamDelegate = nil;
         [self.controlSession stop];
+        self.controlSession.streamDelegate = nil;
         self.controlSession = nil;
     }
     if (self.session != nil) {
-        self.session.streamDelegate = nil;
         [self.session stop];
+        self.session.streamDelegate = nil;
         self.session = nil;
     }
 }
