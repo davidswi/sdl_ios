@@ -75,13 +75,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 #pragma mark - NSURLConnectionDelegate
+    
+// Per https://stackoverflow.com/questions/12901536/reference-to-self-inside-block self should be referenced inside completion blocks using the strong-weak self dance
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+    __weak SDLURLRequestTask *weakSelf = self;
+    
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.completionHandler(nil, self.response, error);
+        __strong SDLURLRequestTask *strongSelf = weakSelf;
+        
+        strongSelf.completionHandler(nil, strongSelf.response, error);
 
-        self.state = SDLURLRequestTaskStateCompleted;
-        [self.delegate taskDidFinish:self];
+        strongSelf.state = SDLURLRequestTaskStateCompleted;
+        [strongSelf.delegate taskDidFinish:strongSelf];
     });
 }
 
@@ -97,11 +103,14 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+    __weak SDLURLRequestTask *weakSelf = self;
+    
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.completionHandler([self.mutableData copy], self.response, nil);
+        __strong SDLURLRequestTask *strongSelf = weakSelf;
+        strongSelf.completionHandler([strongSelf.mutableData copy], strongSelf.response, nil);
 
-        self.state = SDLURLRequestTaskStateCompleted;
-        [self.delegate taskDidFinish:self];
+        strongSelf.state = SDLURLRequestTaskStateCompleted;
+        [strongSelf.delegate taskDidFinish:strongSelf];
     });
 }
 
