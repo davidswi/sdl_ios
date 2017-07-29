@@ -55,6 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)dealloc {
+    _state = SDLURLRequestTaskStateCanceled;
     [_connection cancel];
 }
 
@@ -69,6 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Cancel
 
 - (void)cancel {
+    self.state = SDLURLRequestTaskStateCanceled;
     [self.connection cancel];
     [self connection:self.connection didFailWithError:[NSError errorWithDomain:NSURLErrorDomain code:kCFURLErrorCancelled userInfo:nil]];
 }
@@ -104,6 +106,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
     __weak SDLURLRequestTask *weakSelf = self;
+    if (self.state == SDLURLRequestTaskStateCanceled || self.state == SDLURLRequestTaskStateCompleted){
+        return;
+    }
     
     dispatch_async(dispatch_get_main_queue(), ^{
         __strong SDLURLRequestTask *strongSelf = weakSelf;
