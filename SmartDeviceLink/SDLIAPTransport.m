@@ -31,6 +31,7 @@ int const streamOpenTimeoutSeconds = 2;
 }
 
 @property (assign) int retryCounter;
+@property (assign) BOOL allowRetryReset;
 @property (assign) BOOL sessionSetupInProgress;
 @property (strong) SDLTimer *protocolIndexTimer;
 
@@ -46,6 +47,7 @@ int const streamOpenTimeoutSeconds = 2;
         _controlSession = nil;
         _retryCounter = 0;
         _sessionSetupInProgress = NO;
+        _allowRetryReset = YES;
         _protocolIndexTimer = nil;
 
         [self sdl_startEventListening];
@@ -91,7 +93,7 @@ int const streamOpenTimeoutSeconds = 2;
     EAAccessory *accessory = notification.userInfo[EAAccessoryKey];
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-
+    self.allowRetryReset = YES;
     self.retryCounter = 0;
 
     [self performSelector:@selector(sdl_connect:) withObject:accessory afterDelay:self.retryDelay];
@@ -114,6 +116,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_applicationWillEnterForeground:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"App Foregrounded Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    self.allowRetryReset = YES;
     self.retryCounter = 0;
     [self connect];
 }
@@ -235,7 +238,13 @@ int const streamOpenTimeoutSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
-            [self sdl_retryEstablishSession];
+            if (self.allowRetryReset){
+                // Allow one retry
+                self.allowRetryReset = NO;
+                self.retryCounter = 0;
+            }
+            // Delay the retry by a random amount
+            [self performSelector:@selector(sdl_retryEstablishSession) withObject:nil afterDelay:self.retryDelay];
         }
     } else {
         [SDLDebugTool logInfo:@"Failed MultiApp Control SDLIAPSession Initialization"];
@@ -451,7 +460,16 @@ int const streamOpenTimeoutSeconds = 2;
     double range_length = max_value - min_value;
 
     static double delay = 0;
-
+    
+    // First use random services to compute a cryptographically secure psuedo-random value
+    uint8_t randBytes[sizeof(double)];
+    int result = SecRandomCopyBytes(kSecRandomDefault, sizeof(uint64_t), randBytes);
+    if (result == errSecSuccess) {
+        uint64_t randLongInt = *((uint64_t *)randBytes);
+        double normalized_random = (randLongInt * 1.0) / UINT64_MAX;
+        delay = (normalized_random * range_length) + min_value;
+    }
+                       
     // HAX: This pull the app name and hashes it in an attempt to provide a more even distribution of retry delays. The evidence that this does so is anecdotal. A more ideal solution would be to use a list of known, installed SDL apps on the phone to try and deterministically generate an even delay.
     if (delay == 0) {
         NSString *appName = [[NSProcessInfo processInfo] processName];
