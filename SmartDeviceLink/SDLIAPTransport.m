@@ -238,13 +238,13 @@ int const streamOpenTimeoutSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
-            if (self.allowRetryReset){
+            if (self.allowRetryReset) {
                 // Allow one retry
                 self.allowRetryReset = NO;
                 self.retryCounter = 0;
+                // Delay the retry by a random amount
+                [self performSelector:@selector(sdl_retryEstablishSession) withObject:nil afterDelay:[self sdl_controlSessionFailedRetryDelay]];
             }
-            // Delay the retry by a random amount
-            [self performSelector:@selector(sdl_retryEstablishSession) withObject:nil afterDelay:self.retryDelay];
         }
     } else {
         [SDLDebugTool logInfo:@"Failed MultiApp Control SDLIAPSession Initialization"];
@@ -454,14 +454,13 @@ int const streamOpenTimeoutSeconds = 2;
     };
 }
 
-- (double)retryDelay {
+- (double)sdl_controlSessionFailedRetryDelay {
     const double min_value = 1.5;
-    const double max_value = 9.5;
+    const double max_value = 4.5;
     double range_length = max_value - min_value;
-
-    static double delay = 0;
+    double delay = min_value;
     
-    // First use random services to compute a cryptographically secure psuedo-random value
+    // Use random services to compute a cryptographically secure psuedo-random value
     uint8_t randBytes[sizeof(double)];
     int result = SecRandomCopyBytes(kSecRandomDefault, sizeof(uint64_t), randBytes);
     if (result == errSecSuccess) {
@@ -469,6 +468,16 @@ int const streamOpenTimeoutSeconds = 2;
         double normalized_random = (randLongInt * 1.0) / UINT64_MAX;
         delay = (normalized_random * range_length) + min_value;
     }
+    
+    return delay;
+}
+
+- (double)retryDelay {
+    const double min_value = 1.5;
+    const double max_value = 9.5;
+    double range_length = max_value - min_value;
+
+    static double delay = 0;
                        
     // HAX: This pull the app name and hashes it in an attempt to provide a more even distribution of retry delays. The evidence that this does so is anecdotal. A more ideal solution would be to use a list of known, installed SDL apps on the phone to try and deterministically generate an even delay.
     if (delay == 0) {
