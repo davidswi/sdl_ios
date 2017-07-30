@@ -515,6 +515,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
+        [self disconnect];
         _alreadyDestructed = YES;
         self.controlSession = nil;
         self.session = nil;
