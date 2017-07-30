@@ -1,3 +1,17 @@
+# 4.6.1 Release Notes
+### Bug Fixes
+* Fixes a bug where an app would crash if connected while the app is foregrounded and the vehicle is already in motion.
+
+### Example App
+* Now compiles correctly.
+
+# 4.6.0 Release Notes (since RC 2)
+### Example App
+* Added a command to send a `GetVehicleData`.
+
+### Known Issues
+* On DEBUG builds of an app, if a connected Sync Gen 3 head unit goes through a normal shut down sequence (key out, door open), the app will crash. This will not occur on RELEASE builds.
+
 # 4.6.0 Release Candidate 2 Release Notes (since RC 1)
 ### Bug Fixes
 * Altered the connection timeframe from 0-10 seconds to 1.5-9.5 seconds to improve connection reliability. (SDL-0067)
