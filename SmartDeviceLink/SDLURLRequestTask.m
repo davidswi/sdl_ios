@@ -9,6 +9,7 @@
 #import "SDLURLRequestTask.h"
 
 #import "SDLURLSession.h"
+#import "SDLDebugTool.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -55,6 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)dealloc {
+    [SDLDebugTool logInfo:@"SDLURLRequestTask dealloc"];
     _state = SDLURLRequestTaskStateCanceled;
     [_connection cancel];
 }
@@ -70,6 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Cancel
 
 - (void)cancel {
+    [SDLDebugTool logInfo:@"SDLURLRequestTask cancel"];
     self.state = SDLURLRequestTaskStateCanceled;
     [self.connection cancel];
     [self connection:self.connection didFailWithError:[NSError errorWithDomain:NSURLErrorDomain code:kCFURLErrorCancelled userInfo:nil]];
