@@ -6,6 +6,8 @@
 #import "SDLV1ProtocolHeader.h"
 #import "SDLV2ProtocolHeader.h"
 
+UInt8 const kSDLProtocolHeaderInvalidVersion = 255;
+
 @implementation SDLProtocolHeader
 
 @synthesize version = _version;
@@ -47,6 +49,10 @@
     return description;
 }
 
++ (BOOL)isValidVersion:(UInt8)version {
+    return (version >= 1 && version <= 4);
+}
+
 + (__kindof SDLProtocolHeader *)headerForVersion:(UInt8)version {
     // VERSION DEPENDENT CODE
     switch (version) {
@@ -61,6 +67,8 @@
         default: {
             NSString *reason = [NSString stringWithFormat:@"The version of header that is being created is unknown: %@", @(version)];
             @throw [NSException exceptionWithName:NSInvalidArgumentException reason:reason userInfo:@{ @"requestedVersion": @(version) }];
+
+            
         } break;
     }
 }

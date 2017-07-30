@@ -57,6 +57,7 @@ typedef NS_ENUM(UInt8, SDLFrameData) {
 - (NSData *)data;
 - (void)parse:(NSData *)data;
 - (NSString *)description;
++ (BOOL)isValidVersion:(UInt8)version;
 + (__kindof SDLProtocolHeader *)headerForVersion:(UInt8)version;
 
 @end
