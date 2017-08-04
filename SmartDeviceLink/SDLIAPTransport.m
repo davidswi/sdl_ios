@@ -91,7 +91,6 @@ int const streamOpenTimeoutSeconds = 2;
     EAAccessory *accessory = notification.userInfo[EAAccessoryKey];
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-
     self.retryCounter = 0;
 
     [self performSelector:@selector(sdl_connect:) withObject:accessory afterDelay:self.retryDelay];
@@ -235,8 +234,8 @@ int const streamOpenTimeoutSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
-            [self sdl_retryEstablishSession];
         }
+        [self sdl_retryEstablishSession];
     } else {
         [SDLDebugTool logInfo:@"Failed MultiApp Control SDLIAPSession Initialization"];
         [self sdl_retryEstablishSession];
@@ -451,7 +450,7 @@ int const streamOpenTimeoutSeconds = 2;
     double range_length = max_value - min_value;
 
     static double delay = 0;
-
+                       
     // HAX: This pull the app name and hashes it in an attempt to provide a more even distribution of retry delays. The evidence that this does so is anecdotal. A more ideal solution would be to use a list of known, installed SDL apps on the phone to try and deterministically generate an even delay.
     if (delay == 0) {
         NSString *appName = [[NSProcessInfo processInfo] processName];
@@ -488,6 +487,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
+        [self disconnect];
         _alreadyDestructed = YES;
         self.controlSession = nil;
         self.session = nil;
