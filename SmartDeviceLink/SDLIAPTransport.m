@@ -234,8 +234,8 @@ int const streamOpenTimeoutSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
+            [self sdl_retryEstablishSession];
         }
-        [self sdl_retryEstablishSession];
     } else {
         [SDLDebugTool logInfo:@"Failed MultiApp Control SDLIAPSession Initialization"];
         [self sdl_retryEstablishSession];
