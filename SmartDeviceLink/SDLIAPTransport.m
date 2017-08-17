@@ -32,6 +32,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 @property (assign) int retryCounter;
 @property (assign) BOOL sessionSetupInProgress;
+@property (assign) BOOL listeningForEvents;
 @property (strong) SDLTimer *protocolIndexTimer;
 
 @end
@@ -46,9 +47,9 @@ int const streamOpenTimeoutSeconds = 2;
         _controlSession = nil;
         _retryCounter = 0;
         _sessionSetupInProgress = NO;
+        _listeningForEvents = NO;
         _protocolIndexTimer = nil;
 
-        [self sdl_startEventListening];
         [SDLSiphonServer init];
     }
 
@@ -78,11 +79,13 @@ int const streamOpenTimeoutSeconds = 2;
                                                object:nil];
 
     [[EAAccessoryManager sharedAccessoryManager] registerForLocalNotifications];
+    self.listeningForEvents = YES;
 }
 
 - (void)sdl_stopEventListening {
     [SDLDebugTool logInfo:@"SDLIAPTransport Stopped Listening For Events"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    self.listeningForEvents = NO;
 }
 
 #pragma mark - EAAccessory Notifications
@@ -121,6 +124,10 @@ int const streamOpenTimeoutSeconds = 2;
 #pragma mark - Stream Lifecycle
 
 - (void)connect {
+    if (!self.listeningForEvents) {
+        [self sdl_startEventListening];
+    }
+    
     [self sdl_connect:nil];
 }
 
@@ -137,9 +144,6 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)disconnect {
     [SDLDebugTool logInfo:@"IAP Disconnecting" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    // Stop event listening here so that even if the transport is disconnected by the proxy
-    // we unregister for accessory local notifications
-    [self sdl_stopEventListening];
     if (self.controlSession) {
         [self.controlSession stop];
         self.controlSession.streamDelegate = nil;
@@ -469,6 +473,7 @@ int const streamOpenTimeoutSeconds = 2;
 
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
+        [self sdl_stopEventListening];
         [self disconnect];
         _alreadyDestructed = YES;
         self.controlSession = nil;
