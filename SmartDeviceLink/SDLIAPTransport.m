@@ -471,6 +471,7 @@ int const streamOpenTimeoutSeconds = 2;
     if (!_alreadyDestructed) {
         [self disconnect];
         _alreadyDestructed = YES;
+        [self.protocolIndexTimer cancel];
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;
