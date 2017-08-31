@@ -476,6 +476,7 @@ int const streamOpenTimeoutSeconds = 2;
         [self sdl_stopEventListening];
         [self disconnect];
         _alreadyDestructed = YES;
+        [self.protocolIndexTimer cancel];
         self.controlSession = nil;
         self.session = nil;
         self.delegate = nil;

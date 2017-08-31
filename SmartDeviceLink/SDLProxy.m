@@ -96,6 +96,8 @@ const int POLICIES_CORRELATION_ID = 65535;
         [[NSNotificationCenter defaultCenter] removeObserver:self];
 
         [[SDLURLSession defaultSession] cancelAllTasks];
+        
+        [self.startSessionTimer cancel];
 
         [self.protocol dispose];
         [self.transport dispose];
