@@ -96,6 +96,8 @@ const int POLICIES_CORRELATION_ID = 65535;
         [[NSNotificationCenter defaultCenter] removeObserver:self];
 
         [[SDLURLSession defaultSession] cancelAllTasks];
+        
+        [self.startSessionTimer cancel];
 
         [self.protocol dispose];
         [self.transport dispose];
@@ -540,9 +542,11 @@ const int POLICIES_CORRELATION_ID = 65535;
                                       [SDLDebugTool logInfo:logMessage withType:SDLDebugType_RPC toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
                                       return;
                                   }
-
-                                  UIImage *icon = [UIImage imageWithData:data];
-                                  [self invokeMethodOnDelegates:@selector(onReceivedLockScreenIcon:) withObject:icon];
+                                  
+                                  if (data.length > 0){
+                                      UIImage *icon = [UIImage imageWithData:data];
+                                      [self invokeMethodOnDelegates:@selector(onReceivedLockScreenIcon:) withObject:icon];
+                                  }
                               }];
 }
 

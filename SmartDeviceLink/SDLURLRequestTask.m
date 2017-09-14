@@ -39,14 +39,13 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     _connection = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
-    [_connection scheduleInRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
-    [_connection start];
-
-    _completionHandler = completionHandler;
-
     _mutableData = [NSMutableData data];
     _response = nil;
-    _state = SDLURLRequestTaskStateRunning;
+    
+    self.completionHandler = completionHandler;
+    [self.connection scheduleInRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+    [self.connection start];
+    self.state = SDLURLRequestTaskStateRunning;
 
     return self;
 }
@@ -57,8 +56,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)dealloc {
     [SDLDebugTool logInfo:@"SDLURLRequestTask dealloc"];
-    _state = SDLURLRequestTaskStateCanceled;
-    [_connection cancel];
+    self.state = SDLURLRequestTaskStateCanceled;
+    [self.connection cancel];
 }
 
 
