@@ -26,6 +26,7 @@ NSString *const backgroundTaskName = @"com.sdl.transport.iap.backgroundTask";
 int const createSessionRetries = 3;
 int const protocolIndexTimeoutSeconds = 10;
 int const streamOpenTimeoutSeconds = 2;
+int const controlSessionRetryOffsetSeconds = 2;
 
 
 @interface SDLIAPTransport () {
@@ -356,6 +357,10 @@ int const streamOpenTimeoutSeconds = 2;
 }
 
 - (void)sdl_retryEstablishSession {
+    [self sdl_retryEstablishSessionWithDelay:0];
+}
+
+- (void)sdl_retryEstablishSessionWithDelay:(double)delay {
     // Current strategy disallows automatic retries.
     self.sessionSetupInProgress = NO;
     if (self.session != nil) {
@@ -364,7 +369,11 @@ int const streamOpenTimeoutSeconds = 2;
         self.session = nil;
     }
     // No accessory to use this time, search connected accessories
-    [self sdl_connect:nil];
+    if (delay > 0) {
+        [self performSelector:@selector(sdl_connect:) withObject:nil afterDelay:delay];
+    } else {
+        [self sdl_connect:nil];
+    }
 }
 
 // This gets called after both I/O streams of the session have opened.
@@ -424,7 +433,9 @@ int const streamOpenTimeoutSeconds = 2;
             [strongSelf.controlSession stop];
             strongSelf.controlSession.streamDelegate = nil;
             strongSelf.controlSession = nil;
-            [strongSelf sdl_retryEstablishSession];
+
+            double retryDelay = controlSessionRetryOffsetSeconds + self.retryDelay;
+            [strongSelf sdl_retryEstablishSessionWithDelay:retryDelay];
         }
     };
 }
@@ -474,7 +485,9 @@ int const streamOpenTimeoutSeconds = 2;
         [strongSelf.controlSession stop];
         strongSelf.controlSession.streamDelegate = nil;
         strongSelf.controlSession = nil;
-        [strongSelf sdl_retryEstablishSession];
+
+        double retryDelay = controlSessionRetryOffsetSeconds + self.retryDelay;
+        [strongSelf sdl_retryEstablishSessionWithDelay:retryDelay];
     };
 }
 
