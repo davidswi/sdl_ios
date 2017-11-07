@@ -207,6 +207,10 @@ int const streamOpenTimeoutSeconds = 2;
  */
 - (void)sdl_connect:(EAAccessory *)accessory {
     if (!self.session && !self.sessionSetupInProgress) {
+        // reset counter when this is triggered from -sdl_accessoryConnected:
+        if (accessory) {
+            self.retryCounter = 0;
+        }
         self.sessionSetupInProgress = YES;
         [self sdl_establishSessionWithAccessory:accessory];
     } else if (self.session) {
