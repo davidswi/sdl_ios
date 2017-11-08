@@ -142,7 +142,16 @@ const int POLICIES_CORRELATION_ID = 65535;
 #pragma mark - Application Lifecycle
 
 - (void)sendMobileHMIState {
-    UIApplicationState appState = [UIApplication sharedApplication].applicationState;
+	__block UIApplicationState appState;
+	
+	if ([NSThread currentThread].isMainThread){
+		appState = [UIApplication sharedApplication].applicationState;
+	}
+	else{
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			appState = [UIApplication sharedApplication].applicationState;
+		});
+	}
     SDLOnHMIStatus *HMIStatusRPC = [[SDLOnHMIStatus alloc] init];
 
     HMIStatusRPC.audioStreamingState = [SDLAudioStreamingState NOT_AUDIBLE];
