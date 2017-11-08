@@ -154,7 +154,7 @@ int const controlSessionRetryOffsetSeconds = 2;
 /**
  *  Handles a notification sent by the system when an accessory has been disconnected by cleaning up after the disconnected device. Only check for the data session, the control session is handled separately
  *
- *  @param notification Contains information about the connected accessory
+ *  @param accessory Contains information about the connected accessory
  */
 - (BOOL)accessoryIsOurs:(EAAccessory *)accessory{
 	SDLIAPSession *activeSession = nil;
