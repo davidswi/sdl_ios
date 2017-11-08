@@ -38,7 +38,6 @@ int const controlSessionRetryOffsetSeconds = 2;
 @property (assign) BOOL listeningForEvents;
 @property (strong) SDLTimer *protocolIndexTimer;
 @property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTaskId;
-@property (nonatomic, assign) BOOL sessionSetupInProgress;
 
 @end
 
