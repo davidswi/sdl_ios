@@ -228,6 +228,10 @@ int const controlSessionRetryOffsetSeconds = 2;
     if (!self.listeningForEvents) {
         [self sdl_startEventListening];
     }
+	if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground){
+		[SDLDebugTool logInfo:@"App backgrounded on connect, starting background task" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+		[self sdl_backgroundTaskStart];
+	}
     
     [self sdl_connect:nil];
 }
