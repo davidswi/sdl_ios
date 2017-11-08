@@ -34,6 +34,8 @@ int const controlSessionRetryOffsetSeconds = 2;
 }
 
 @property (assign) int retryCounter;
+@property (assign) BOOL sessionSetupInProgress;
+@property (assign) BOOL listeningForEvents;
 @property (strong) SDLTimer *protocolIndexTimer;
 @property (nonatomic, assign) UIBackgroundTaskIdentifier backgroundTaskId;
 @property (nonatomic, assign) BOOL sessionSetupInProgress;
@@ -50,9 +52,10 @@ int const controlSessionRetryOffsetSeconds = 2;
         _session = nil;
         _controlSession = nil;
         _retryCounter = 0;
+        _sessionSetupInProgress = NO;
+        _listeningForEvents = NO;
         _protocolIndexTimer = nil;
-        
-        [self sdl_startEventListening];
+
         [SDLSiphonServer init];
     }
     
@@ -116,6 +119,7 @@ int const controlSessionRetryOffsetSeconds = 2;
                                                object:nil];
     
     [[EAAccessoryManager sharedAccessoryManager] registerForLocalNotifications];
+    self.listeningForEvents = YES;
 }
 
 /**
@@ -124,6 +128,7 @@ int const controlSessionRetryOffsetSeconds = 2;
 - (void)sdl_stopEventListening {
     [SDLDebugTool logInfo:@"SDLIAPTransport Stopped Listening For Events"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    self.listeningForEvents = NO;
 }
 
 #pragma mark EAAccessory Notifications
@@ -198,6 +203,10 @@ int const controlSessionRetryOffsetSeconds = 2;
 #pragma mark - Stream Lifecycle
 
 - (void)connect {
+    if (!self.listeningForEvents) {
+        [self sdl_startEventListening];
+    }
+    
     [self sdl_connect:nil];
 }
 
@@ -579,6 +588,7 @@ int const controlSessionRetryOffsetSeconds = 2;
 
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
+        [self sdl_stopEventListening];
         [self disconnect];
         _alreadyDestructed = YES;
         [self.protocolIndexTimer cancel];
