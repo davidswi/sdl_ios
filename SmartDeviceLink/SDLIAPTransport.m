@@ -359,7 +359,11 @@ int const controlSessionRetryOffsetSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
-            [self sdl_retryEstablishSessionWithDelay:self.retryDelay];
+
+            double retryDelay = self.retryDelay;
+            NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
+            [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+            [self sdl_retryEstablishSessionWithDelay:retryDelay];
         }
     } else {
         [SDLDebugTool logInfo:@"Failed MultiApp Control SDLIAPSession Initialization"];
@@ -470,6 +474,8 @@ int const controlSessionRetryOffsetSeconds = 2;
             strongSelf.controlSession = nil;
 
             double retryDelay = controlSessionRetryOffsetSeconds + self.retryDelay;
+            NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
+            [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
             [strongSelf sdl_retryEstablishSessionWithDelay:retryDelay];
         }
     };
@@ -522,6 +528,8 @@ int const controlSessionRetryOffsetSeconds = 2;
         strongSelf.controlSession = nil;
 
         double retryDelay = controlSessionRetryOffsetSeconds + self.retryDelay;
+        NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
+        [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
         [strongSelf sdl_retryEstablishSessionWithDelay:retryDelay];
     };
 }
