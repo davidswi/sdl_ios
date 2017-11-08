@@ -143,7 +143,7 @@ int const controlSessionRetryOffsetSeconds = 2;
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     
-    if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive) {
+    if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateBackground) {
         [SDLDebugTool logInfo:@"Accessory connected while app is in background. Starting background task." withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
         [self sdl_backgroundTaskStart];
     }
@@ -156,22 +156,43 @@ int const controlSessionRetryOffsetSeconds = 2;
  *
  *  @param notification Contains information about the connected accessory
  */
+- (BOOL)accessoryIsOurs:(EAAccessory *)accessory{
+	SDLIAPSession *activeSession = nil;
+	if (self.controlSession){
+		activeSession = self.controlSession;
+	}
+	else{
+		activeSession = self.session;
+	}
+	
+	if (activeSession){
+		if (accessory.connectionID == activeSession.accessory.connectionID ||
+			[accessory.serialNumber isEqualToString:activeSession.accessory.serialNumber]){
+			return YES;
+		}
+	}
+	else{
+		if ([accessory supportsProtocol:@"com.smartdevicelink.prot0"]){
+			return YES;
+		}
+	}
+	
+	return NO;
+}
+
 - (void)sdl_accessoryDisconnected:(NSNotification *)notification {
     [SDLDebugTool logInfo:@"Accessory Disconnected Event" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
-    if (accessory.connectionID != self.session.accessory.connectionID) {
-        // Disconnected during a control session
-        self.retryCounter = 0;
-        [SDLDebugTool logInfo:@"Accessory connection ID mismatch!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    }
-    if ([accessory.serialNumber isEqualToString:self.session.accessory.serialNumber]) {
-        // Disconnected during a data session
-        self.retryCounter = 0;
-        self.sessionSetupInProgress = NO;
-        [self disconnect];
-        [self.delegate onTransportDisconnected];
-    }
+	if ([self accessoryIsOurs:accessory]){
+		self.retryCounter = 0;
+		self.sessionSetupInProgress = NO;
+		[self disconnect];
+		[self.delegate onTransportDisconnected];
+	}
+	else{
+		[SDLDebugTool logInfo:@"Accessory is not ours, ignoring!!!" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+	}
 }
 
 #pragma mark App Lifecycle Notifications
@@ -195,8 +216,10 @@ int const controlSessionRetryOffsetSeconds = 2;
  *  @param notification Notification
  */
 - (void)sdl_applicationDidEnterBackground:(NSNotification *)notification {
-    [SDLDebugTool logInfo:@"App backgrounded, starting background task" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    [self sdl_backgroundTaskStart];
+	if (self.sessionSetupInProgress){
+		[SDLDebugTool logInfo:@"App backgrounded, starting background task" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+		[self sdl_backgroundTaskStart];
+	}
 }
 
 #pragma mark - Stream Lifecycle
@@ -332,7 +355,7 @@ int const controlSessionRetryOffsetSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
-            [self sdl_retryEstablishSession];
+            [self sdl_retryEstablishSessionWithDelay:self.retryDelay];
         }
     } else {
         [SDLDebugTool logInfo:@"Failed MultiApp Control SDLIAPSession Initialization"];
