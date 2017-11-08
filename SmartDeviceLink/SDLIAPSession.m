@@ -284,4 +284,8 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
     };
 }
 
+- (void)dealloc{
+	[SDLDebugTool logInfo:@"SDLIAPSession dealloc"];
+}
+
 @end
