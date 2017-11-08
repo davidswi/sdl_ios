@@ -23,7 +23,7 @@ NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 NSString *const multiSessionProtocolString = @"com.smartdevicelink.multisession";
 NSString *const backgroundTaskName = @"com.sdl.transport.iap.backgroundTask";
 
-int const createSessionRetries = 3;
+int const createSessionRetries = 10;
 int const protocolIndexTimeoutSeconds = 10;
 int const streamOpenTimeoutSeconds = 2;
 int const controlSessionRetryOffsetSeconds = 2;
@@ -187,7 +187,7 @@ int const controlSessionRetryOffsetSeconds = 2;
 	if ([self accessoryIsOurs:accessory]){
 		self.retryCounter = 0;
 		self.sessionSetupInProgress = NO;
-		[self disconnect];
+		// [self disconnect];
 		[self.delegate onTransportDisconnected];
 	}
 	else{
@@ -228,8 +228,11 @@ int const controlSessionRetryOffsetSeconds = 2;
     if (!self.listeningForEvents) {
         [self sdl_startEventListening];
     }
-	if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground){
-		[SDLDebugTool logInfo:@"App backgrounded on connect, starting background task" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+	
+	UIApplicationState state = [UIApplication sharedApplication].applicationState;
+	
+	if (state != UIApplicationStateActive){
+		[SDLDebugTool logInfo:@"App inactive on connect, starting background task" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
 		[self sdl_backgroundTaskStart];
 	}
     
@@ -261,8 +264,6 @@ int const controlSessionRetryOffsetSeconds = 2;
  */
 - (void)disconnect {
     [SDLDebugTool logInfo:@"IAP Disconnecting" withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
-    // Stop event listening here so that even if the transport is disconnected by the proxy we unregister for accessory local notifications
-    [self sdl_stopEventListening];
     if (self.controlSession != nil) {
         [self.controlSession stop];
         self.controlSession.streamDelegate = nil;
@@ -360,7 +361,11 @@ int const controlSessionRetryOffsetSeconds = 2;
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
 
-            double retryDelay = self.retryDelay;
+			double retryDelay = self.retryDelay;
+			if (self.retryCounter == 0){
+				// Account for possible 10s delay due to CAPP holding control session
+				retryDelay += 10.0;
+			}
             NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
             [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
             [self sdl_retryEstablishSessionWithDelay:retryDelay];
