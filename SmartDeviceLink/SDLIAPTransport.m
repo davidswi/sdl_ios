@@ -362,12 +362,7 @@ int const controlSessionRetryOffsetSeconds = 2;
             self.controlSession = nil;
 			
 			double retryDelay;
-			if (self.retryCounter == 0){
-				retryDelay = [self retryDelayWithMinValue:10.5 maxValue:19.5];
-			}
-			else{
-				retryDelay = [self retryDelayWithMinValue:1.5 maxValue:2.5];
-			}
+			retryDelay = [self retryDelayWithMinValue:1.5 maxValue:2.5];
 			
             NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
             [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
