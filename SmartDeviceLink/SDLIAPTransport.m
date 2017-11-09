@@ -576,6 +576,9 @@ int const controlSessionRetryOffsetSeconds = 2;
             NSData *dataIn = [NSData dataWithBytes:buf length:bytesRead];
             
             if (bytesRead > 0) {
+				if (strongSelf.backgroundTaskId != UIBackgroundTaskInvalid){
+					[strongSelf sdl_backgroundTaskEnd];
+				}
                 [strongSelf.delegate onDataReceived:dataIn];
             } else {
                 break;
