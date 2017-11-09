@@ -360,12 +360,15 @@ int const controlSessionRetryOffsetSeconds = 2;
             [SDLDebugTool logInfo:@"Control Session Failed"];
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
-
-			double retryDelay = self.retryDelay;
+			
+			double retryDelay;
 			if (self.retryCounter == 0){
-				// Account for possible 10s delay due to CAPP holding control session
-				retryDelay += 10.0;
+				retryDelay = [self retryDelayWithMinValue:10.5 maxValue:19.5];
 			}
+			else{
+				retryDelay = [self retryDelayWithMinValue:1.5 maxValue:2.5];
+			}
+			
             NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
             [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
             [self sdl_retryEstablishSessionWithDelay:retryDelay];
@@ -432,6 +435,7 @@ int const controlSessionRetryOffsetSeconds = 2;
     if (![controlProtocolString isEqualToString:session.protocol]) {
         self.sessionSetupInProgress = NO;
         [SDLDebugTool logInfo:@"Data Session Established"];
+		[self sdl_backgroundTaskEnd];
         [self.delegate onTransportConnected];
     }
 }
@@ -478,7 +482,7 @@ int const controlSessionRetryOffsetSeconds = 2;
             strongSelf.controlSession.streamDelegate = nil;
             strongSelf.controlSession = nil;
 
-            double retryDelay = controlSessionRetryOffsetSeconds + self.retryDelay;
+			double retryDelay = [self retryDelayWithMinValue:1.5 maxValue:2.5];
             NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
             [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
             [strongSelf sdl_retryEstablishSessionWithDelay:retryDelay];
@@ -602,26 +606,29 @@ int const controlSessionRetryOffsetSeconds = 2;
     };
 }
 
-- (double)retryDelay {
-    const double min_value = 1.5;
-    const double max_value = 9.5;
-    double range_length = max_value - min_value;
-    double delay = min_value;
-    UInt64 randomLong;
-                       
-    int ret = SecRandomCopyBytes(kSecRandomDefault, sizeof(UInt64), (uint8_t *)&randomLong);
-    if (ret == 0){
-        // Transform the string into a number between 0 and 1
-        double randomValueInRange0to1 = ((double)randomLong) / 0xffffffffffffffff;
-        
-        // Transform the number into a number between min and max
-        delay = ((range_length * randomValueInRange0to1) + min_value);
-        
-    }
-    
-    return delay;
+- (double)retryDelayWithMinValue:(double)min maxValue:(double)max{
+	const double min_value = min;
+	const double max_value = max;
+	double range_length = max_value - min_value;
+	double delay = min_value;
+	UInt64 randomLong;
+	
+	int ret = SecRandomCopyBytes(kSecRandomDefault, sizeof(UInt64), (uint8_t *)&randomLong);
+	if (ret == 0){
+		// Transform the string into a number between 0 and 1
+		double randomValueInRange0to1 = ((double)randomLong) / 0xffffffffffffffff;
+		
+		// Transform the number into a number between min and max
+		delay = ((range_length * randomValueInRange0to1) + min_value);
+		
+	}
+	
+	return delay;
 }
 
+- (double)retryDelay{
+	return [self retryDelayWithMinValue:1.5 maxValue:9.5];
+}
 
 #pragma mark - Lifecycle Destruction
 
