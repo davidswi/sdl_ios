@@ -9,6 +9,7 @@
 @class SDLStreamDelegate;
 
 typedef void (^SessionCompletionHandler)(BOOL success);
+typedef void (^SendCompletionHandler)(void);
 
 @interface SDLIAPSession : NSObject
 
@@ -17,6 +18,7 @@ typedef void (^SessionCompletionHandler)(BOOL success);
 @property (strong, atomic) EASession *easession;
 @property (weak) id<SDLIAPSessionDelegate> delegate;
 @property (strong, atomic) SDLStreamDelegate *streamDelegate;
+@property (nonatomic, strong) SendCompletionHandler firstDataSendCompletionHandler;
 @property (assign, readonly, getter=isStopped) BOOL stopped;
 
 - (instancetype)initWithAccessory:(EAAccessory *)accessory

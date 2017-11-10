@@ -133,6 +133,11 @@ NSTimeInterval const streamThreadWaitSecs = 1.0;
         } else if (bytesWritten == bytesRemaining) {
             // Remove the data from the queue
             [self.sendDataQueue popBuffer];
+            if (self.firstDataSendCompletionHandler) {
+                self.firstDataSendCompletionHandler();
+                self.firstDataSendCompletionHandler = nil;
+            }
+
         } else {
             // Cleave the sent bytes from the data, the remainder will sit at the head of the queue
             [remainder replaceBytesInRange:NSMakeRange(0, bytesWritten) withBytes:NULL length:0];

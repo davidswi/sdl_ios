@@ -390,7 +390,13 @@ int const controlSessionRetryOffsetSeconds = 2;
         ioStreamDelegate.streamHasBytesHandler = [self sdl_dataStreamHasBytesHandler];
         ioStreamDelegate.streamEndHandler = [self sdl_dataStreamEndedHandler];
         ioStreamDelegate.streamErrorHandler = [self sdl_dataStreamErroredHandler];
-        
+
+        __weak typeof(self) weakSelf = self;
+        self.session.firstDataSendCompletionHandler = ^{
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            [strongSelf sdl_backgroundTaskEnd];
+        };
+
         if (![self.session start]) {
             [SDLDebugTool logInfo:@"Data Session Failed"];
             self.session.streamDelegate = nil;
@@ -581,9 +587,9 @@ int const controlSessionRetryOffsetSeconds = 2;
             NSData *dataIn = [NSData dataWithBytes:buf length:bytesRead];
             
             if (bytesRead > 0) {
-				if (strongSelf.backgroundTaskId != UIBackgroundTaskInvalid){
-					[strongSelf sdl_backgroundTaskEnd];
-				}
+//				if (strongSelf.backgroundTaskId != UIBackgroundTaskInvalid){
+//					[strongSelf sdl_backgroundTaskEnd];
+//				}
                 [strongSelf.delegate onDataReceived:dataIn];
             } else {
                 break;
