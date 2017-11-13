@@ -23,7 +23,7 @@ NSString *const indexedProtocolStringPrefix = @"com.smartdevicelink.prot";
 NSString *const multiSessionProtocolString = @"com.smartdevicelink.multisession";
 NSString *const backgroundTaskName = @"com.sdl.transport.iap.backgroundTask";
 
-int const createSessionRetries = 10;
+int const createSessionRetries = 3;
 int const protocolIndexTimeoutSeconds = 10;
 int const streamOpenTimeoutSeconds = 2;
 int const controlSessionRetryOffsetSeconds = 2;
@@ -72,6 +72,7 @@ int const controlSessionRetryOffsetSeconds = 2;
     }
     
     self.backgroundTaskId = [[UIApplication sharedApplication] beginBackgroundTaskWithName:backgroundTaskName expirationHandler:^{
+		[SDLDebugTool logInfo:@"Background task expired by iOS!!!"];
         [self sdl_backgroundTaskEnd];
     }];
 }
@@ -143,8 +144,8 @@ int const controlSessionRetryOffsetSeconds = 2;
     NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Accessory Connected, Opening in %0.03fs", self.retryDelay];
     [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
     
-    if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateBackground) {
-        [SDLDebugTool logInfo:@"Accessory connected while app is in background. Starting background task." withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
+    if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive) {
+        [SDLDebugTool logInfo:@"Accessory connected while app not active. Starting background task." withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
         [self sdl_backgroundTaskStart];
     }
     
@@ -391,12 +392,6 @@ int const controlSessionRetryOffsetSeconds = 2;
         ioStreamDelegate.streamEndHandler = [self sdl_dataStreamEndedHandler];
         ioStreamDelegate.streamErrorHandler = [self sdl_dataStreamErroredHandler];
 
-        __weak typeof(self) weakSelf = self;
-        self.session.firstDataSendCompletionHandler = ^{
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-            [strongSelf sdl_backgroundTaskEnd];
-        };
-
         if (![self.session start]) {
             [SDLDebugTool logInfo:@"Data Session Failed"];
             self.session.streamDelegate = nil;
@@ -578,6 +573,7 @@ int const controlSessionRetryOffsetSeconds = 2;
     
     return ^(NSInputStream *istream) {
         __strong typeof(weakSelf) strongSelf = weakSelf;
+		[strongSelf sdl_backgroundTaskEnd];
         
         uint8_t buf[[[SDLGlobals globals] mtuSizeForServiceType:SDLServiceType_RPC]];
         while (istream.streamStatus == NSStreamStatusOpen && istream.hasBytesAvailable) {
