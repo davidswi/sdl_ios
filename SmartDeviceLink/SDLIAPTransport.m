@@ -55,7 +55,7 @@ int const controlSessionRetryOffsetSeconds = 2;
         _listeningForEvents = NO;
         _protocolIndexTimer = nil;
 
-      	self.state = SDLTransportStateDisconnected
+		self.state = SDLTransportStateDisconnected;
         [SDLSiphonServer init];
     }
     
@@ -440,8 +440,6 @@ int const controlSessionRetryOffsetSeconds = 2;
     if (![controlProtocolString isEqualToString:session.protocol]) {
         self.sessionSetupInProgress = NO;
         [SDLDebugTool logInfo:@"Data Session Established"];
-        // Temporarily disable this call. This may let iOS to suspend app before we send StartSession request.
-        // [self sdl_backgroundTaskEnd];
         [self.delegate onTransportConnected];
     }
 }

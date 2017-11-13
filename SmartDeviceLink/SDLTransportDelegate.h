@@ -5,6 +5,7 @@
 
 - (void)onTransportConnected;
 - (void)onTransportDisconnected;
+- (void)onTransportFailed;
 - (void)onDataReceived:(NSData *)receivedData;
 
 @end

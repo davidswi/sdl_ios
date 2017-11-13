@@ -99,6 +99,14 @@
     }
 }
 
+- (void)onTransportFailed {
+	for (id<SDLProtocolListener> listener in self.protocolDelegateTable.allObjects) {
+		if ([listener respondsToSelector:@selector(onError:exception:)]) {
+			[listener onError:@"Transport error -- transport failed" exception:nil];
+		}
+	}
+}
+
 - (void)onDataReceived:(NSData *)receivedData {
     [self handleBytesFromTransport:receivedData];
 }
