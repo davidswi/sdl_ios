@@ -48,6 +48,7 @@ int const streamOpenTimeoutSeconds = 2;
         _sessionSetupInProgress = NO;
         _protocolIndexTimer = nil;
 
+		self.state = SDLTransportStateDisconnected;
         [self sdl_startEventListening];
         [SDLSiphonServer init];
     }
@@ -125,6 +126,7 @@ int const streamOpenTimeoutSeconds = 2;
 }
 
 - (void)sdl_connect:(EAAccessory *)accessory {
+	self.state = SDLTransportStateConnecting;
     if (!self.session && !self.sessionSetupInProgress) {
         self.sessionSetupInProgress = YES;
         [self sdl_establishSessionWithAccessory:accessory];
@@ -150,6 +152,7 @@ int const streamOpenTimeoutSeconds = 2;
         self.session.streamDelegate = nil;
         self.session = nil;
     }
+	self.state = SDLTransportStateDisconnected;
 }
 
 
@@ -194,6 +197,7 @@ int const streamOpenTimeoutSeconds = 2;
 
     } else {
         // We are beyond the number of retries allowed
+		self.state = SDLTransportStateConnectFailed;
         [SDLDebugTool logInfo:@"Create session retries exhausted."];
         self.sessionSetupInProgress = NO;
     }
