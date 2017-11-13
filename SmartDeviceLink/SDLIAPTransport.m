@@ -55,6 +55,7 @@ int const controlSessionRetryOffsetSeconds = 2;
         _listeningForEvents = NO;
         _protocolIndexTimer = nil;
 
+      	self.state = SDLTransportStateDisconnected
         [SDLSiphonServer init];
     }
     
@@ -246,6 +247,7 @@ int const controlSessionRetryOffsetSeconds = 2;
  *  @param accessory The accessory to attempt connection with or nil to scan for accessories.
  */
 - (void)sdl_connect:(EAAccessory *)accessory {
+	self.state = SDLTransportStateConnecting;
     if (!self.session && !self.sessionSetupInProgress) {
         // reset counter when this is triggered from -sdl_accessoryConnected:
         if (accessory) {
@@ -274,6 +276,7 @@ int const controlSessionRetryOffsetSeconds = 2;
         self.session.streamDelegate = nil;
         self.session = nil;
     }
+	self.state = SDLTransportStateDisconnected;
 }
 
 
@@ -322,6 +325,7 @@ int const controlSessionRetryOffsetSeconds = 2;
         }
     } else {
         // We are beyond the number of retries allowed
+		self.state = SDLTransportStateConnectFailed;
         [SDLDebugTool logInfo:@"Create session retries exhausted."];
         self.sessionSetupInProgress = NO;
     }
