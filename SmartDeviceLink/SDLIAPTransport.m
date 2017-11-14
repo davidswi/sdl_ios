@@ -326,7 +326,11 @@ int const controlSessionRetryOffsetSeconds = 2;
     } else {
         // We are beyond the number of retries allowed
 		self.state = SDLTransportStateConnectFailed;
+		[self sdl_backgroundTaskEnd];
         [SDLDebugTool logInfo:@"Create session retries exhausted."];
+		if (self.delegate && [self.delegate respondsToSelector:@selector(onTransportFailed)]){
+			[self.delegate onTransportFailed];
+		}
         self.sessionSetupInProgress = NO;
     }
 }
@@ -366,7 +370,7 @@ int const controlSessionRetryOffsetSeconds = 2;
             self.controlSession.streamDelegate = nil;
             self.controlSession = nil;
 			
-			double retryDelay = [self retryDelayWithMinValue:1.5 maxValue:5];
+			double retryDelay = [self retryDelayWithMinValue:1.5 maxValue:5.5];
 			
             NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
             [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
@@ -480,7 +484,7 @@ int const controlSessionRetryOffsetSeconds = 2;
             strongSelf.controlSession.streamDelegate = nil;
             strongSelf.controlSession = nil;
 
-			double retryDelay = [self retryDelayWithMinValue:1.5 maxValue:5];
+			double retryDelay = [self retryDelayWithMinValue:1.5 maxValue:5.5];
             NSMutableString *logMessage = [NSMutableString stringWithFormat:@"Retry control session in %0.03fs", retryDelay];
             [SDLDebugTool logInfo:logMessage withType:SDLDebugType_Transport_iAP toOutput:SDLDebugOutput_All toGroup:self.debugConsoleGroupName];
             [strongSelf sdl_retryEstablishSessionWithDelay:retryDelay];
