@@ -6,6 +6,7 @@
 #import "SDLV1ProtocolHeader.h"
 #import "SDLV2ProtocolHeader.h"
 
+NS_ASSUME_NONNULL_BEGIN
 UInt8 const kSDLProtocolHeaderInvalidVersion = 255;
 
 @implementation SDLProtocolHeader
@@ -22,20 +23,12 @@ UInt8 const kSDLProtocolHeaderInvalidVersion = 255;
     return self;
 }
 
-- (BOOL)compressed {
-    return _encrypted;
-}
-
-- (void)setCompressed:(BOOL)compressed {
-    _encrypted = compressed;
-}
-
-- (id)copyWithZone:(NSZone *)zone {
+- (id)copyWithZone:(nullable NSZone *)zone {
     [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
-- (NSData *)data {
+- (nullable NSData *)data {
     [self doesNotRecognizeSelector:_cmd];
     return nil;
 }
@@ -82,3 +75,5 @@ UInt8 const kSDLProtocolHeaderInvalidVersion = 255;
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -4,6 +4,7 @@
 
 #import "SDLTransportDelegate.h"
 
+NS_ASSUME_NONNULL_BEGIN
 typedef enum{
 	SDLTransportStateDisconnected,
 	SDLTransportStateConnecting,
@@ -11,18 +12,16 @@ typedef enum{
 	SDLTransportStateConnectFailed,
 	SDLTransportStateConnectDenied
 } SDLTransportState;
-
-
 @interface SDLAbstractTransport : NSObject
 
-@property (weak) id<SDLTransportDelegate> delegate;
-@property (strong) NSString *debugConsoleGroupName;
+@property (nullable, weak, nonatomic) id<SDLTransportDelegate> delegate;
+@property (strong, nonatomic) NSString *debugConsoleGroupName;
 @property (nonatomic, assign) SDLTransportState state;
-
 - (void)connect;
 - (void)disconnect;
 - (void)sendData:(NSData *)dataToSend;
-- (void)dispose;
 - (double)retryDelay;
 
 @end
+
+NS_ASSUME_NONNULL_END
