@@ -248,7 +248,9 @@ int const controlSessionRetryOffsetSeconds = 2;
  */
 - (void)sdl_connect:(EAAccessory *)accessory {
 	self.state = SDLTransportStateConnecting;
-    if (!self.session && !self.sessionSetupInProgress) {
+	BOOL isDataSessionEstablished = (self.session && !self.session.stopped);
+	
+    if (!isDataSessionEstablished && !self.sessionSetupInProgress) {
         // reset counter when this is triggered from -sdl_accessoryConnected:
         if (accessory) {
             self.retryCounter = 0;
@@ -326,7 +328,6 @@ int const controlSessionRetryOffsetSeconds = 2;
     } else {
         // We are beyond the number of retries allowed
 		self.state = SDLTransportStateConnectFailed;
-		[self sdl_backgroundTaskEnd];
         [SDLDebugTool logInfo:@"Create session retries exhausted."];
 		if (self.delegate && [self.delegate respondsToSelector:@selector(onTransportFailed)]){
 			[self.delegate onTransportFailed];
