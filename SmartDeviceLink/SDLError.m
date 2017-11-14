@@ -152,6 +152,14 @@ SDLErrorDomain *const SDLErrorDomainFileManager = @"com.sdl.filemanager.error";
                  userInfo:nil];
 }
 
++ (NSException *)sdl_connectionDeniedException {
+	return [NSException exceptionWithName:@"ConnectionDeniedException" reason:@"This application does not have permission to connect" userInfo:nil];
+}
+
++ (NSException *)sdl_connectionFailedException {
+	return [NSException exceptionWithName:@"ConnectionFailedException" reason:@"The proxy failed to connect over the specified transport" userInfo:nil];
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

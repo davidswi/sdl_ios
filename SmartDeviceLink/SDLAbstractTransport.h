@@ -8,7 +8,8 @@ typedef enum{
 	SDLTransportStateDisconnected,
 	SDLTransportStateConnecting,
 	SDLTransportStateConnected,
-	SDLTransportStateConnectFailed
+	SDLTransportStateConnectFailed,
+	SDLTransportStateConnectDenied
 } SDLTransportState;
 
 

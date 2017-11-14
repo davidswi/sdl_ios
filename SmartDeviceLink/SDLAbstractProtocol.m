@@ -1,9 +1,9 @@
 //  SDLAbstractProtocol.m
 
 #import "SDLAbstractProtocol.h"
-
+#import "SDLAbstractTransport.h"
 #import "SDLRPCMessage.h"
-
+#import "SDLError.h"
 
 @implementation SDLAbstractProtocol
 
@@ -100,9 +100,24 @@
 }
 
 - (void)onTransportFailed {
+	NSException *exception = nil;
+	
 	for (id<SDLProtocolListener> listener in self.protocolDelegateTable.allObjects) {
+		switch (self.transport.state){
+			case SDLTransportStateConnectFailed:
+				exception = [NSException sdl_connectionFailedException];
+				break;
+				
+			case SDLTransportStateConnectDenied:
+				exception = [NSException sdl_connectionDeniedException];
+				break;
+				
+			default:
+				break;
+		}
+		
 		if ([listener respondsToSelector:@selector(onError:exception:)]) {
-			[listener onError:@"Transport error -- transport failed" exception:nil];
+			[listener onError:@"Transport error -- transport failed" exception:exception];
 		}
 	}
 }
