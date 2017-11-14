@@ -386,6 +386,7 @@ int const controlSessionRetryOffsetSeconds = 2;
         // We are beyond the number of retries allowed
 		self.state = SDLTransportStateConnectFailed;
          	SDLLogW(@"Surpassed allowed retry attempts");
+		self.state = SDLTransportStateConnectFailed;
 		if (self.delegate && [self.delegate respondsToSelector:@selector(onTransportFailed)]){
 			[self.delegate onTransportFailed];
 		}
