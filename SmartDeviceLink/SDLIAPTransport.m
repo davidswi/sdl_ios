@@ -641,6 +641,7 @@ int const controlSessionRetryOffsetSeconds = 2;
 
 - (void)sdl_destructObjects {
     if (!_alreadyDestructed) {
+		[self sdl_backgroundTaskEnd];
         [self sdl_stopEventListening];
         [self disconnect];
         _alreadyDestructed = YES;
