@@ -190,9 +190,9 @@ int const controlSessionRetryOffsetSeconds = 2;
 - (void)sdl_accessoryDisconnected:(NSNotification *)notification {
     EAAccessory *accessory = [notification.userInfo objectForKey:EAAccessoryKey];
 	if ([self accessoryIsOurs:accessory]){
+		[self disconnect];
 		self.retryCounter = 0;
 		self.sessionSetupInProgress = NO;
-		// [self disconnect];
 		[self.delegate onTransportDisconnected];
 	}
 	else{
@@ -380,6 +380,10 @@ int const controlSessionRetryOffsetSeconds = 2;
             // No compatible accessory
             SDLLogV(@"No accessory supporting SDL was found, dismissing setup");
             self.sessionSetupInProgress = NO;
+			self.state = SDLTransportStateNoSDLService;
+			if (self.delegate && [self.delegate respondsToSelector:@selector(onTransportFailed)]){
+				[self.delegate onTransportFailed];
+			}
         }
         
     } else {
@@ -473,8 +477,7 @@ int const controlSessionRetryOffsetSeconds = 2;
     self.sessionSetupInProgress = NO;
     if (self.session != nil) {
         [self.session stop];
-        self.session.delegate = nil;
-        self.session = nil;
+
     }
     // No accessory to use this time, search connected accessories
     if (delay > 0) {
@@ -538,8 +541,6 @@ int const controlSessionRetryOffsetSeconds = 2;
         if (strongSelf.controlSession != nil) {
             [strongSelf.protocolIndexTimer cancel];
             [strongSelf.controlSession stop];
-            strongSelf.controlSession.streamDelegate = nil;
-            strongSelf.controlSession = nil;
 
 			double retryDelay = [self retryDelayWithMinValue:1.5 maxValue:5.5];
 			SDLLogW(@"Retry control session in %0.03fs", retryDelay);
@@ -571,13 +572,11 @@ int const controlSessionRetryOffsetSeconds = 2;
         [strongSelf.protocolIndexTimer cancel];
         dispatch_sync(dispatch_get_main_queue(), ^{
             [strongSelf.controlSession stop];
-            strongSelf.controlSession.streamDelegate = nil;
-            strongSelf.controlSession = nil;
         });
         
         if (accessory.isConnected) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                self.retryCounter = 0;
+
                 [strongSelf sdl_createIAPDataSessionWithAccessory:accessory forProtocol:indexedProtocolString];
             });
         }
@@ -593,8 +592,6 @@ int const controlSessionRetryOffsetSeconds = 2;
         
         [strongSelf.protocolIndexTimer cancel];
         [strongSelf.controlSession stop];
-        strongSelf.controlSession.streamDelegate = nil;
-        strongSelf.controlSession = nil;
 
         double retryDelay = controlSessionRetryOffsetSeconds + self.retryDelay;
 		SDLLogW(@"Retry control session in %0.03fs", retryDelay);
@@ -616,8 +613,6 @@ int const controlSessionRetryOffsetSeconds = 2;
             dispatch_sync(dispatch_get_main_queue(), ^{
                 [strongSelf.session stop];
             });
-            strongSelf.session.streamDelegate = nil;
-            strongSelf.session = nil;
         }
         // We don't call sdl_retryEstablishSession here because the stream end event usually fires when the accessory is disconnected
     };
@@ -655,9 +650,8 @@ int const controlSessionRetryOffsetSeconds = 2;
         dispatch_sync(dispatch_get_main_queue(), ^{
             [strongSelf.session stop];
         });
-        strongSelf.session.streamDelegate = nil;
-        strongSelf.session = nil;
-        if (![LegacyProtocolString isEqualToString:strongSelf.session.protocol]) {
+
+        if (![legacyProtocolString isEqualToString:strongSelf.session.protocol]) {
             [strongSelf sdl_retryEstablishSession];
         }
     };
@@ -696,8 +690,12 @@ int const controlSessionRetryOffsetSeconds = 2;
         [self disconnect];
         _alreadyDestructed = YES;
         [self.protocolIndexTimer cancel];
+		self.controlSession.streamDelegate = nil;
         self.controlSession = nil;
-        self.session = nil;
+		if (self.session.isStopped){
+			self.session.streamDelegate = nil;
+			self.session = nil;
+		}
         self.delegate = nil;
         self.sessionSetupInProgress = NO;
     }

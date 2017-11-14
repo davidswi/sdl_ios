@@ -74,6 +74,10 @@ NS_ASSUME_NONNULL_BEGIN
 	
 	for (id<SDLProtocolListener> listener in self.protocolDelegateTable.allObjects) {
 		switch (self.transport.state){
+			case SDLTransportStateNoSDLService:
+				exception = [NSException sdl_noSDLServiceException];
+				break;
+				
 			case SDLTransportStateConnectFailed:
 				exception = [NSException sdl_connectionFailedException];
 				break;

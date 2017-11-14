@@ -10,7 +10,8 @@ typedef enum{
 	SDLTransportStateConnecting,
 	SDLTransportStateConnected,
 	SDLTransportStateConnectFailed,
-	SDLTransportStateConnectDenied
+	SDLTransportStateConnectDenied,
+	SDLTransportStateNoSDLService
 } SDLTransportState;
 @interface SDLAbstractTransport : NSObject
 

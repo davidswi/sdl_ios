@@ -99,7 +99,6 @@ NSTimeInterval const StreamThreadWaitSecs = 1.0;
         [self stopStream:self.easession.outputStream];
         [self stopStream:self.easession.inputStream];
     }
-    self.easession = nil;
 }
 
 - (BOOL)isStopped {

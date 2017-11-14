@@ -203,6 +203,10 @@ SDLErrorDomain *const SDLErrorDomainFileManager = @"com.sdl.filemanager.error";
 	return [NSException exceptionWithName:@"ConnectionFailedException" reason:@"The proxy failed to connect over the specified transport" userInfo:nil];
 }
 
++ (NSException *)sdl_noSDLServiceException {
+	return [NSException exceptionWithName:@"NoSDLServiceException" reason:@"The proxy failed to connect over the specified transport" userInfo:nil];
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

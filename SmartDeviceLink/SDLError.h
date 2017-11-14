@@ -53,6 +53,7 @@ extern SDLErrorDomain *const SDLErrorDomainFileManager;
 + (NSException *)sdl_missingFilesException;
 + (NSException *)sdl_connectionDeniedException;
 + (NSException *)sdl_connectionFailedException;
++ (NSException *)sdl_noSDLServiceException;
 
 @end
 
