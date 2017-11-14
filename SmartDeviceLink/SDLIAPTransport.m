@@ -574,7 +574,6 @@ int const controlSessionRetryOffsetSeconds = 2;
     
     return ^(NSInputStream *istream) {
         __strong typeof(weakSelf) strongSelf = weakSelf;
-		[strongSelf sdl_backgroundTaskEnd];
         
         uint8_t buf[[[SDLGlobals globals] mtuSizeForServiceType:SDLServiceType_RPC]];
         while (istream.streamStatus == NSStreamStatusOpen && istream.hasBytesAvailable) {
