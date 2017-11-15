@@ -132,6 +132,7 @@ int const controlSessionRetryOffsetSeconds = 2;
 - (void)sdl_stopEventListening {
     SDLLogV(@"SDLIAPTransport stopped listening for events");
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+	[[EAAccessoryManager sharedAccessoryManager] unregisterForLocalNotifications];
     self.listeningForEvents = NO;
 }
 
